@@ -209,6 +209,7 @@
                         <p>SSE Total: <strong>{{ number_format($sseTotal, 4) }}</strong></p>
                     </div>
                 @endif
+
                 {{-- Menampilkan Centroid Baru --}}
                 @if (isset($newCentroids))
                     <div class="mt-4">
@@ -227,7 +228,7 @@
                                     <tr>
                                         <td>C{{ $index + 1 }}</td>
                                         @foreach ($centroid as $value)
-                                            <td>{{ number_format($value, 6) }}</td>
+                                            <td>{{ number_format($value, 2) }}</td>
                                         @endforeach
                                     </tr>
                                 @endforeach

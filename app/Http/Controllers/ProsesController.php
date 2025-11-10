@@ -53,7 +53,7 @@ class ProsesController extends Controller
             $minIdx = $this->argmin($dists);  // index 0..k-1
 
             // Tambahkan dataset ke dalam cluster yang sesuai
-            $clusters[$minIdx][] = $p->nama_platform_e_wallet;  // Menyimpan nama platform e-wallet
+            $clusters[$minIdx][] = $p->id;  // Menyimpan ID dataset (bukan nama platform)
 
             // Tambahkan jarak terdekat kuadrat ke SSE total
             $sseTotal += $dists[$minIdx] ** 2;
@@ -65,6 +65,12 @@ class ProsesController extends Controller
                 'dmin' => $dists[$minIdx],
                 'dminSquared' => $dists[$minIdx] ** 2, // Menyimpan jarak terdekat dipangkatkan 2
             ];
+        }
+
+        // Menghitung centroid baru untuk setiap cluster
+        $newCentroids = [];
+        foreach ($clusters as $index => $cluster) {
+            $newCentroids[] = $this->calculateCentroid($cluster, $features);
         }
 
         // tetap kirim list untuk form
@@ -79,7 +85,7 @@ class ProsesController extends Controller
         foreach ($clusters as $index => $platforms) {
             $clusterResults[] = [
                 'cluster' => $index + 1,
-                'platforms' => implode(', ', $platforms),  // Menggabungkan nama platform dengan koma
+                'platforms' => implode(', ', Dataset::whereIn('id', $platforms)->pluck('nama_platform_e_wallet')->toArray()),  // Menggabungkan nama platform dengan koma
             ];
         }
 
@@ -90,10 +96,40 @@ class ProsesController extends Controller
             'distanceTable',
             'centroids',
             'features',
-            'clusterResults',  // Mengirimkan hasil nama platform per cluster
-            'sseTotal'  // Mengirimkan total SSE
+            'clusterResults',
+            'sseTotal',  // Mengirimkan total SSE
+            'newCentroids'  // Mengirimkan centroid baru
         ))->with('selectedCluster', $k);
     }
+
+    // Fungsi untuk menghitung ulang centroid berdasarkan rata-rata fitur
+    private function calculateCentroid($cluster, $features)
+    {
+        $centroid = [];
+
+        foreach ($features as $feature) {
+            $sum = 0;
+            $count = 0;
+            // Untuk setiap dataset dalam cluster
+            foreach ($cluster as $datasetId) {
+                $dataset = Dataset::find($datasetId);  // Ambil dataset berdasarkan ID
+                if ($dataset) {
+                    $sum += $dataset->$feature;
+                    $count++;
+                }
+            }
+
+            // Hitung rata-rata dari fitur jika ada dataset dalam cluster
+            if ($count > 0) {
+                $centroid[$feature] = $sum / $count;
+            } else {
+                $centroid[$feature] = 0;  // Set nilai 0 jika tidak ada dataset valid
+            }
+        }
+
+        return (object) $centroid;  // Mengembalikan sebagai objek
+    }
+
 
 
     // Fungsi untuk menghitung jarak Euclidean antara dataset dan centroid
