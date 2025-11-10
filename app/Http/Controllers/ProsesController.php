@@ -30,11 +30,10 @@ class ProsesController extends Controller
         $k = (int) $request->cluster;
         $features = ['VTP', 'NTP', 'PPE', 'FPE', 'PSD', 'IPE', 'PKP'];
 
-        // --- data points (vector fitur) ---
+        // --- data points (vektor fitur + nama) ---
         $points = Dataset::orderBy('id')->get();
-        // simpan vektor fitur + nama untuk render dengan cepat
-        $X = [];           // id => [feat => float]
-        $names = [];       // id => nama_platform_e_wallet
+        $X = [];
+        $names = [];
         foreach ($points as $p) {
             $vec = [];
             foreach ($features as $f) {
@@ -45,44 +44,69 @@ class ProsesController extends Controller
         }
 
         // --- inisialisasi centroid dari pilihan user ---
-        $selectedIds = $request->dataset_id;
-        $selectedDatasets = Dataset::whereIn('id', $selectedIds)->get(); // untuk tabel “Hasil Pilihan Dataset”
-        $centroids = []; // indeks 0..k-1, masing2 array fitur
-        foreach ($selectedIds as $cid) {
-            $centroids[] = $X[$cid]; // vektor fitur
+        $initialIds = $request->dataset_id;
+        $selectedDatasets = Dataset::whereIn('id', $initialIds)->get(); // tampilkan "Hasil Pilihan Dataset (Centroid Awal)"
+        $centroids = [];
+        foreach ($initialIds as $cid) {
+            $centroids[] = $X[$cid];
         }
 
-        // --- loop k-means sampai konvergen ---
+        // --- Simpan iterasi 0 dengan centroid awal ---
+        $iterationsLog = [];
+        $distanceTable = $this->generateDistanceTable($X, $centroids, $features, $names); // Tabel jarak untuk iterasi 0
+        $iterationsLog[] = [
+            'iteration' => 0,
+            'centroids' => $centroids,   // Centroid awal
+            'clusters' => [],            // Tidak ada cluster di iterasi 0
+            'sse' => 0,                  // SSE untuk iterasi 0
+            'distanceTable' => $distanceTable, // Tabel jarak untuk iterasi 0
+        ];
+
+        // --- loop k-means + simpan snapshot setiap iterasi ---
         $maxIterations = 100;
         $threshold = 1e-6;
-
-        $clustersIds = array_fill(0, $k, []); // per iterasi: array of array id
+        $clustersIds = array_fill(0, $k, []);
         $iterationsUsed = 0;
-        $prevCentroids = $centroids;
 
         for ($iter = 1; $iter <= $maxIterations; $iter++) {
             $iterationsUsed = $iter;
 
-            // 1) Assignment: tentukan cluster terdekat utk setiap point
+            // 1) Assignment
             $clustersIds = array_fill(0, $k, []);
+            $sseTotalIter = 0.0;
+
+            // Hitung jarak dan tentukan cluster untuk setiap data
             foreach ($X as $pid => $vec) {
                 $bestIdx = 0;
                 $bestD2 = INF;
+                $dList = [];
+
                 foreach ($centroids as $idx => $cvec) {
-                    $d2 = $this->squaredEuclideanVec($vec, $cvec, $features); // tanpa sqrt untuk efisien
+                    $d2 = $this->squaredEuclideanVec($vec, $cvec, $features);
+                    $dList[] = sqrt($d2); // Menyimpan jarak Euclidean
                     if ($d2 < $bestD2) {
                         $bestD2 = $d2;
                         $bestIdx = $idx;
                     }
                 }
+
+                $sseTotalIter += $bestD2;
+                $distanceTable[] = [
+                    'dataset' => (object) ['id' => $pid, 'nama_platform_e_wallet' => $names[$pid]],  // Dataset info
+                    'distances' => $dList,
+                    'nearest' => $bestIdx + 1,  // Menyimpan indeks cluster yang paling dekat
+                    'dmin' => sqrt($bestD2),
+                    'dminSquared' => $bestD2,
+                ];
+
                 $clustersIds[$bestIdx][] = $pid;
             }
 
-            // 2) Update: hitung centroid baru via rata-rata fitur tiap cluster
+            // 2) Update centroid
             $newCentroids = [];
             foreach ($clustersIds as $idx => $members) {
                 if (count($members) === 0) {
-                    // empty cluster -> pertahankan centroid lama
+                    // empty cluster -> pertahankan
                     $newCentroids[$idx] = $centroids[$idx];
                     continue;
                 }
@@ -99,24 +123,39 @@ class ProsesController extends Controller
                 $newCentroids[$idx] = $mean;
             }
 
-            // 3) Cek konvergensi (max L2 diff antar centroid)
+            // 3) Simpan SNAPSHOT iterasi ini
+            $clusterNames = [];
+            foreach ($clustersIds as $idx => $members) {
+                $clusterNames[$idx] = implode(', ', array_map(fn($id) => $names[$id], $members));
+            }
+
+            // Generate tabel jarak pada setiap iterasi
+            $distanceTable = $this->generateDistanceTable($X, $newCentroids, $features, $names);
+
+            $iterationsLog[] = [
+                'iteration' => $iter,
+                'centroids' => $newCentroids,   // array[cluster][fitur] => nilai
+                'clusters' => $clusterNames,   // array[cluster] => "nama1, nama2, ..."
+                'sse' => $sseTotalIter,
+                'distanceTable' => $distanceTable, // Tabel jarak untuk iterasi ini
+            ];
+
+            // 4) Cek konvergensi
             $maxShift = 0.0;
             for ($i = 0; $i < $k; $i++) {
                 $shift = sqrt($this->squaredEuclideanVec($centroids[$i], $newCentroids[$i], $features));
                 if ($shift > $maxShift)
                     $maxShift = $shift;
             }
-
             $centroids = $newCentroids;
             if ($maxShift < $threshold) {
                 break;
             }
         }
 
-        // --- hitung tabel jarak akhir (terhadap centroid konvergen) + SSE total ---
+        // --- hasil akhir untuk tabel jarak & SSE total ---
         $distanceTable = [];
         $sseTotal = 0.0;
-
         foreach ($points as $p) {
             $vec = $X[$p->id];
             $dList = [];
@@ -132,55 +171,83 @@ class ProsesController extends Controller
                 }
             }
             $sseTotal += $bestD2;
-
             $distanceTable[] = [
                 'dataset' => $p,
                 'distances' => $dList,
-                'nearest' => $bestIdx + 1,     // 1..k
+                'nearest' => $bestIdx + 1,
                 'dmin' => sqrt($bestD2),
                 'dminSquared' => $bestD2,
             ];
         }
 
-        // --- hasil anggota cluster (pakai nama platform) ---
-        $clusterResults = [];
-        foreach ($clustersIds as $idx => $members) {
-            $clusterResults[] = [
-                'cluster' => $idx + 1,
-                'platforms' => implode(', ', array_map(fn($id) => $names[$id], $members)),
-            ];
+        // ringkasan hasil akhir (anggota cluster)
+        $finalClusters = [];
+        foreach ($iterationsLog[array_key_last($iterationsLog)]['clusters'] as $idx => $namesStr) {
+            $finalClusters[] = ['cluster' => $idx + 1, 'platforms' => $namesStr];
         }
 
-        // --- siapkan centroid akhir untuk ditampilkan ---
-        $newCentroids = $centroids; // alias nama yang sudah dipakai di Blade
+        $newCentroids = $centroids;
 
-        // kirim lagi data agar form tetap bisa dipakai setelah submit
+        // kirim ke view
         $totalDataset = Dataset::count();
         $allDatasets = Dataset::select('id', 'nama_platform_e_wallet')->orderBy('id')->get();
 
         return view('pages.proses.index', compact(
             'totalDataset',
             'allDatasets',
-            'selectedDatasets',
-            'distanceTable',
+            'selectedDatasets',   // centroid awal (model) untuk tabel awal
             'features',
-            'clusterResults',
-            'sseTotal',
-            'newCentroids'
+            'distanceTable',      // jarak ke centroid akhir
+            'sseTotal',           // SSE akhir
+            'finalClusters',      // ringkasan akhir
+            'newCentroids',       // centroid akhir
+            'iterationsLog'       // riwayat semua iterasi
         ))->with('selectedCluster', $k)
             ->with('iterationsUsed', $iterationsUsed);
     }
 
-    // ---------- helpers ----------
+
+    // helper jarak kuadrat
     private function squaredEuclideanVec(array $a, array $b, array $features): float
     {
         $sum = 0.0;
         foreach ($features as $f) {
-            $xa = (float) ($a[$f] ?? 0);
-            $xb = (float) ($b[$f] ?? 0);
-            $d = $xa - $xb;
+            $d = (float) ($a[$f] ?? 0) - (float) ($b[$f] ?? 0);
             $sum += $d * $d;
         }
         return $sum;
     }
+
+    // Generate tabel jarak untuk setiap iterasi
+    private function generateDistanceTable($X, $centroids, $features, $names)
+    {
+        $distanceTable = [];
+        foreach ($X as $pid => $vec) {
+            $dList = [];
+            $bestIdx = 0;
+            $bestD2 = INF;
+            foreach ($centroids as $idx => $cvec) {
+                $d2 = $this->squaredEuclideanVec($vec, $cvec, $features);
+                $dList[] = sqrt($d2); // Menyimpan jarak Euclidean
+                if ($d2 < $bestD2) {
+                    $bestD2 = $d2;
+                    $bestIdx = $idx;
+                }
+            }
+            $distanceTable[] = [
+                'dataset' => (object) ['id' => $pid, 'nama_platform_e_wallet' => $names[$pid]],  // Dataset info
+                'distances' => $dList,
+                'nearest' => $bestIdx + 1,  // Menyimpan indeks cluster yang paling dekat
+                'dmin' => sqrt($bestD2),
+                'dminSquared' => $bestD2,
+            ];
+        }
+
+        return $distanceTable;
+    }
+
+
+
+
+
 }
