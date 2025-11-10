@@ -3,8 +3,11 @@
 @section('content')
     <div class="container-fluid">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex align-items-center justify-content-between">
                 <h4 class="m-0 font-weight-bold text-primary">Proses Kmeans</h4>
+                @if (isset($iterationsUsed))
+                    <span class="badge badge-info">Konvergen dalam {{ $iterationsUsed }} iterasi</span>
+                @endif
             </div>
 
             <div class="card-body">
@@ -17,7 +20,7 @@
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Dataset
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalDataset }}</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalDataset ?? 0 }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-database fa-2x text-gray-300"></i>
@@ -52,8 +55,8 @@
                             <select name="dataset_id[]" class="form-control cluster-2" disabled required>
                                 <option value="">Select Dataset {{ $i }}</option>
                                 @foreach ($allDatasets as $d)
-                                    <option value="{{ $d->id }}">Dataset {{ $d->id }} -
-                                        {{ $d->nama_platform_e_wallet }}</option>
+                                    <option value="{{ $d->id }}">
+                                        {{ 'Dataset ' . $d->id . ' - ' . $d->nama_platform_e_wallet }}</option>
                                 @endforeach
                             </select>
                         @endfor
@@ -66,8 +69,8 @@
                             <select name="dataset_id[]" class="form-control cluster-3" disabled required>
                                 <option value="">Select Dataset {{ $i }}</option>
                                 @foreach ($allDatasets as $d)
-                                    <option value="{{ $d->id }}">Dataset {{ $d->id }} -
-                                        {{ $d->nama_platform_e_wallet }}</option>
+                                    <option value="{{ $d->id }}">
+                                        {{ 'Dataset ' . $d->id . ' - ' . $d->nama_platform_e_wallet }}</option>
                                 @endforeach
                             </select>
                         @endfor
@@ -80,8 +83,8 @@
                             <select name="dataset_id[]" class="form-control cluster-4" disabled required>
                                 <option value="">Select Dataset {{ $i }}</option>
                                 @foreach ($allDatasets as $d)
-                                    <option value="{{ $d->id }}">Dataset {{ $d->id }} -
-                                        {{ $d->nama_platform_e_wallet }}</option>
+                                    <option value="{{ $d->id }}">
+                                        {{ 'Dataset ' . $d->id . ' - ' . $d->nama_platform_e_wallet }}</option>
                                 @endforeach
                             </select>
                         @endfor
@@ -94,8 +97,8 @@
                             <select name="dataset_id[]" class="form-control cluster-5" disabled required>
                                 <option value="">Select Dataset {{ $i }}</option>
                                 @foreach ($allDatasets as $d)
-                                    <option value="{{ $d->id }}">Dataset {{ $d->id }} -
-                                        {{ $d->nama_platform_e_wallet }}</option>
+                                    <option value="{{ $d->id }}">
+                                        {{ 'Dataset ' . $d->id . ' - ' . $d->nama_platform_e_wallet }}</option>
                                 @endforeach
                             </select>
                         @endfor
@@ -105,9 +108,9 @@
                 </form>
 
                 {{-- Tabel hasil pilihan --}}
-                @if ($selectedDatasets)
+                @if (!empty($selectedDatasets) && count($selectedDatasets))
                     <div class="mt-4">
-                        <h5 class="mb-3">Hasil Pilihan Dataset</h5>
+                        <h5 class="mb-3">Hasil Pilihan Dataset (Centroid Awal)</h5>
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
@@ -143,7 +146,6 @@
                     </div>
                 @endif
 
-
                 {{-- Tabel perhitungan jarak Euclidean --}}
                 @if (!empty($distanceTable))
                     <div class="mt-4">
@@ -154,11 +156,12 @@
                                     <th>#</th>
                                     <th>ID</th>
                                     <th>Nama Platform E-Wallet</th>
-                                    @for ($i = 1; $i <= $selectedCluster; $i++)
+                                    @for ($i = 1; $i <= ($selectedCluster ?? 0); $i++)
                                         <th>Jarak ke C{{ $i }}</th>
                                     @endfor
                                     <th>Cluster Terdekat</th>
-                                    <th>Jarak Minimum</th>
+                                    <th>Jarak Terdekat</th>
+                                    <th>Jarak Terdekat ^2</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -172,15 +175,16 @@
                                         @endforeach
                                         <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
                                         <td>{{ number_format($row['dmin'], 4) }}</td>
-                                        <td>{{ number_format($row['dminSquared'], 4) }}</td> <!-- Dipangkatkan 2 -->
+                                        <td>{{ number_format($row['dminSquared'], 4) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 @endif
-                {{-- Tabel Hasil SSE untuk Setiap Cluster --}}
-                @if (isset($clusterResults))
+
+                {{-- Hasil Cluster: daftar anggota --}}
+                @if (!empty($clusterResults))
                     <div class="mt-4">
                         <h5 class="mb-3">Hasil Cluster dan Nama Platform E-Wallet</h5>
                         <table class="table table-bordered">
@@ -194,7 +198,7 @@
                                 @foreach ($clusterResults as $result)
                                     <tr>
                                         <td>C{{ $result['cluster'] }}</td>
-                                        <td>{{ $result['platforms'] }}</td>
+                                        <td>{{ $result['platforms'] ?: '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -202,7 +206,7 @@
                     </div>
                 @endif
 
-                {{-- Menampilkan Total SSE --}}
+                {{-- Total SSE --}}
                 @if (isset($sseTotal))
                     <div class="mt-4">
                         <h5 class="mb-3">Total SSE (Sum of Squared Errors)</h5>
@@ -210,10 +214,10 @@
                     </div>
                 @endif
 
-                {{-- Menampilkan Centroid Baru --}}
-                @if (isset($newCentroids))
+                {{-- Centroid akhir (konvergen) --}}
+                @if (!empty($newCentroids))
                     <div class="mt-4">
-                        <h5 class="mb-3">Centroid Baru Setiap Cluster</h5>
+                        <h5 class="mb-3">Centroid Akhir (Konvergen)</h5>
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
@@ -227,8 +231,8 @@
                                 @foreach ($newCentroids as $index => $centroid)
                                     <tr>
                                         <td>C{{ $index + 1 }}</td>
-                                        @foreach ($centroid as $value)
-                                            <td>{{ number_format($value, 2) }}</td>
+                                        @foreach ($features as $f)
+                                            <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
                                         @endforeach
                                     </tr>
                                 @endforeach
@@ -248,7 +252,6 @@
             const clusterSelect = document.getElementById('cluster');
 
             function showBlock(k) {
-                // sembunyikan semua block & disable semua select agar "required" tidak mengganggu
                 [2, 3, 4, 5].forEach(n => {
                     const block = document.getElementById('block-' + n);
                     if (!block) return;
@@ -259,7 +262,6 @@
                     });
                 });
 
-                // tampilkan block terpilih & enable select di dalamnya
                 const active = document.getElementById('block-' + k);
                 if (active) {
                     active.style.display = 'block';
@@ -269,15 +271,15 @@
                 }
             }
 
-            // on load (untuk kasus kembali dari POST)
             @if (!empty($selectedCluster))
                 showBlock({{ $selectedCluster }});
             @endif
 
-            // on change
-            clusterSelect.addEventListener('change', function() {
-                if (this.value) showBlock(this.value);
-            });
+            if (clusterSelect) {
+                clusterSelect.addEventListener('change', function() {
+                    if (this.value) showBlock(this.value);
+                });
+            }
         })();
     </script>
 @endpush

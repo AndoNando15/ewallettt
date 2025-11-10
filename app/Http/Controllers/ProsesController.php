@@ -28,127 +28,159 @@ class ProsesController extends Controller
         ]);
 
         $k = (int) $request->cluster;
-
-        // centroid = dataset yang dipilih user (ditampilkan di "Hasil Pilihan Dataset")
-        $centroids = Dataset::whereIn('id', $request->dataset_id)->get();
-
-        // fitur yang dipakai untuk jarak Euclidean (7 dimensi sesuai tabel Anda)
         $features = ['VTP', 'NTP', 'PPE', 'FPE', 'PSD', 'IPE', 'PKP'];
 
-        // seluruh titik yang mau dihitung jaraknya
+        // --- data points (vector fitur) ---
         $points = Dataset::orderBy('id')->get();
-
-        $distanceTable = []; // untuk render tabel
-        $sseTotal = 0;  // Untuk menyimpan total SSE
-        $clusters = array_fill(0, $k, []);  // Array untuk menyimpan dataset berdasarkan cluster
-
+        // simpan vektor fitur + nama untuk render dengan cepat
+        $X = [];           // id => [feat => float]
+        $names = [];       // id => nama_platform_e_wallet
         foreach ($points as $p) {
-            $dists = [];
-            // Hitung jarak ke setiap centroid
-            foreach ($centroids as $c) {
-                $dists[] = $this->euclidean($p, $c, $features);
+            $vec = [];
+            foreach ($features as $f) {
+                $vec[$f] = (float) ($p->{$f} ?? 0);
+            }
+            $X[$p->id] = $vec;
+            $names[$p->id] = $p->nama_platform_e_wallet;
+        }
+
+        // --- inisialisasi centroid dari pilihan user ---
+        $selectedIds = $request->dataset_id;
+        $selectedDatasets = Dataset::whereIn('id', $selectedIds)->get(); // untuk tabel “Hasil Pilihan Dataset”
+        $centroids = []; // indeks 0..k-1, masing2 array fitur
+        foreach ($selectedIds as $cid) {
+            $centroids[] = $X[$cid]; // vektor fitur
+        }
+
+        // --- loop k-means sampai konvergen ---
+        $maxIterations = 100;
+        $threshold = 1e-6;
+
+        $clustersIds = array_fill(0, $k, []); // per iterasi: array of array id
+        $iterationsUsed = 0;
+        $prevCentroids = $centroids;
+
+        for ($iter = 1; $iter <= $maxIterations; $iter++) {
+            $iterationsUsed = $iter;
+
+            // 1) Assignment: tentukan cluster terdekat utk setiap point
+            $clustersIds = array_fill(0, $k, []);
+            foreach ($X as $pid => $vec) {
+                $bestIdx = 0;
+                $bestD2 = INF;
+                foreach ($centroids as $idx => $cvec) {
+                    $d2 = $this->squaredEuclideanVec($vec, $cvec, $features); // tanpa sqrt untuk efisien
+                    if ($d2 < $bestD2) {
+                        $bestD2 = $d2;
+                        $bestIdx = $idx;
+                    }
+                }
+                $clustersIds[$bestIdx][] = $pid;
             }
 
-            // Menentukan index dari centroid yang memiliki jarak terkecil
-            $minIdx = $this->argmin($dists);  // index 0..k-1
+            // 2) Update: hitung centroid baru via rata-rata fitur tiap cluster
+            $newCentroids = [];
+            foreach ($clustersIds as $idx => $members) {
+                if (count($members) === 0) {
+                    // empty cluster -> pertahankan centroid lama
+                    $newCentroids[$idx] = $centroids[$idx];
+                    continue;
+                }
+                $sum = array_fill_keys($features, 0.0);
+                foreach ($members as $pid) {
+                    foreach ($features as $f) {
+                        $sum[$f] += $X[$pid][$f];
+                    }
+                }
+                $mean = [];
+                foreach ($features as $f) {
+                    $mean[$f] = $sum[$f] / count($members);
+                }
+                $newCentroids[$idx] = $mean;
+            }
 
-            // Tambahkan dataset ke dalam cluster yang sesuai
-            $clusters[$minIdx][] = $p->id;  // Menyimpan ID dataset (bukan nama platform)
+            // 3) Cek konvergensi (max L2 diff antar centroid)
+            $maxShift = 0.0;
+            for ($i = 0; $i < $k; $i++) {
+                $shift = sqrt($this->squaredEuclideanVec($centroids[$i], $newCentroids[$i], $features));
+                if ($shift > $maxShift)
+                    $maxShift = $shift;
+            }
 
-            // Tambahkan jarak terdekat kuadrat ke SSE total
-            $sseTotal += $dists[$minIdx] ** 2;
+            $centroids = $newCentroids;
+            if ($maxShift < $threshold) {
+                break;
+            }
+        }
+
+        // --- hitung tabel jarak akhir (terhadap centroid konvergen) + SSE total ---
+        $distanceTable = [];
+        $sseTotal = 0.0;
+
+        foreach ($points as $p) {
+            $vec = $X[$p->id];
+            $dList = [];
+            $bestIdx = 0;
+            $bestD2 = INF;
+            foreach ($centroids as $idx => $cvec) {
+                $d2 = $this->squaredEuclideanVec($vec, $cvec, $features);
+                $d = sqrt($d2);
+                $dList[] = $d;
+                if ($d2 < $bestD2) {
+                    $bestD2 = $d2;
+                    $bestIdx = $idx;
+                }
+            }
+            $sseTotal += $bestD2;
 
             $distanceTable[] = [
                 'dataset' => $p,
-                'distances' => $dists,
-                'nearest' => $minIdx + 1, // Menampilkan 1..k (untuk cluster)
-                'dmin' => $dists[$minIdx],
-                'dminSquared' => $dists[$minIdx] ** 2, // Menyimpan jarak terdekat dipangkatkan 2
+                'distances' => $dList,
+                'nearest' => $bestIdx + 1,     // 1..k
+                'dmin' => sqrt($bestD2),
+                'dminSquared' => $bestD2,
             ];
         }
 
-        // Menghitung centroid baru untuk setiap cluster
-        $newCentroids = [];
-        foreach ($clusters as $index => $cluster) {
-            $newCentroids[] = $this->calculateCentroid($cluster, $features);
+        // --- hasil anggota cluster (pakai nama platform) ---
+        $clusterResults = [];
+        foreach ($clustersIds as $idx => $members) {
+            $clusterResults[] = [
+                'cluster' => $idx + 1,
+                'platforms' => implode(', ', array_map(fn($id) => $names[$id], $members)),
+            ];
         }
 
-        // tetap kirim list untuk form
+        // --- siapkan centroid akhir untuk ditampilkan ---
+        $newCentroids = $centroids; // alias nama yang sudah dipakai di Blade
+
+        // kirim lagi data agar form tetap bisa dipakai setelah submit
         $totalDataset = Dataset::count();
         $allDatasets = Dataset::select('id', 'nama_platform_e_wallet')->orderBy('id')->get();
-
-        // untuk tetap menampilkan “Hasil Pilihan Dataset”
-        $selectedDatasets = $centroids;
-
-        // Menampilkan nama platform e-wallet dalam setiap cluster
-        $clusterResults = [];
-        foreach ($clusters as $index => $platforms) {
-            $clusterResults[] = [
-                'cluster' => $index + 1,
-                'platforms' => implode(', ', Dataset::whereIn('id', $platforms)->pluck('nama_platform_e_wallet')->toArray()),  // Menggabungkan nama platform dengan koma
-            ];
-        }
 
         return view('pages.proses.index', compact(
             'totalDataset',
             'allDatasets',
             'selectedDatasets',
             'distanceTable',
-            'centroids',
             'features',
             'clusterResults',
-            'sseTotal',  // Mengirimkan total SSE
-            'newCentroids'  // Mengirimkan centroid baru
-        ))->with('selectedCluster', $k);
+            'sseTotal',
+            'newCentroids'
+        ))->with('selectedCluster', $k)
+            ->with('iterationsUsed', $iterationsUsed);
     }
 
-    // Fungsi untuk menghitung ulang centroid berdasarkan rata-rata fitur
-    private function calculateCentroid($cluster, $features)
+    // ---------- helpers ----------
+    private function squaredEuclideanVec(array $a, array $b, array $features): float
     {
-        $centroid = [];
-
-        foreach ($features as $feature) {
-            $sum = 0;
-            $count = 0;
-            // Untuk setiap dataset dalam cluster
-            foreach ($cluster as $datasetId) {
-                $dataset = Dataset::find($datasetId);  // Ambil dataset berdasarkan ID
-                if ($dataset) {
-                    $sum += $dataset->$feature;
-                    $count++;
-                }
-            }
-
-            // Hitung rata-rata dari fitur jika ada dataset dalam cluster
-            if ($count > 0) {
-                $centroid[$feature] = $sum / $count;
-            } else {
-                $centroid[$feature] = 0;  // Set nilai 0 jika tidak ada dataset valid
-            }
+        $sum = 0.0;
+        foreach ($features as $f) {
+            $xa = (float) ($a[$f] ?? 0);
+            $xb = (float) ($b[$f] ?? 0);
+            $d = $xa - $xb;
+            $sum += $d * $d;
         }
-
-        return (object) $centroid;  // Mengembalikan sebagai objek
+        return $sum;
     }
-
-
-
-    // Fungsi untuk menghitung jarak Euclidean antara dataset dan centroid
-    private function euclidean($point, $centroid, $features)
-    {
-        $distance = 0;
-        foreach ($features as $feature) {
-            // Menghitung kuadrat selisih nilai fitur
-            $distance += pow($point->$feature - $centroid->$feature, 2);
-        }
-        return sqrt($distance);  // Mengembalikan akar kuadrat dari total perhitungan
-    }
-
-    // Fungsi untuk mencari indeks dengan nilai terkecil (argmin)
-    private function argmin($array)
-    {
-        return array_keys($array, min($array))[0]; // Mengembalikan indeks dari nilai terkecil
-    }
-
-
-
 }
