@@ -18,7 +18,6 @@ class ProsesController extends Controller
             'selectedDatasets' => null,
         ]);
     }
-
     public function process(Request $request)
     {
         $request->validate([
@@ -61,8 +60,9 @@ class ProsesController extends Controller
 
         // Menyimpan hasil iterasi dan jarak Euclidean per iterasi
         $allIterations = [];
-        $allDistancesPerIteration = [];  // This will store the distances per iteration
-        $allClusterResultsPerIteration = []; // This will store cluster results per iteration
+        $allDistancesPerIteration = [];
+        $allClusterResultsPerIteration = [];
+        $allSSEPerIteration = [];  // To store SSE for each iteration
 
         for ($iter = 1; $iter <= $maxIterations; $iter++) {
             $iterationsUsed = $iter;
@@ -102,15 +102,16 @@ class ProsesController extends Controller
                 $newCentroids[$idx] = $mean;
             }
 
-            // Simpan centroid dan jarak per iterasi
+            // Save the centroid and cluster results per iteration
             $allIterations[] = [
                 'iteration' => $iter,
                 'centroids' => $newCentroids,
                 'clusters' => $clustersIds
             ];
 
-            // 3) Simpan jarak Euclidean per iterasi
-            $distanceTableForThisIteration = [];  // Store distances for this iteration
+            // 3) Calculate SSE for this iteration
+            $sseIteration = 0.0;
+            $distanceTableForThisIteration = [];
             foreach ($points as $p) {
                 $vec = $X[$p->id];
                 $dList = [];
@@ -125,6 +126,8 @@ class ProsesController extends Controller
                         $bestIdx = $idx;
                     }
                 }
+                $sseIteration += $bestD2;
+
                 $distanceTableForThisIteration[] = [
                     'dataset' => $p,
                     'distances' => $dList,
@@ -134,8 +137,8 @@ class ProsesController extends Controller
                 ];
             }
 
-            // Save the distance table for this iteration
             $allDistancesPerIteration[] = $distanceTableForThisIteration;
+            $allSSEPerIteration[] = $sseIteration;  // Store SSE for this iteration
 
             // 4) Save the cluster results per iteration (platforms assigned to each cluster)
             $clusterResultsForThisIteration = [];
@@ -161,7 +164,18 @@ class ProsesController extends Controller
             }
         }
 
-        // --- hitung tabel jarak akhir (terhadap centroid konvergen) + SSE total ---
+        // Calculate the total SSE across all iterations
+        $totalSSE = array_sum($allSSEPerIteration);
+
+        // --- Calculate centroid averages for each cluster ---
+        $centroidAverages = [];
+        foreach ($newCentroids as $index => $centroid) {
+            $clusterName = 'C' . ($index + 1); // C1, C2, C3, ...
+            $average = array_sum($centroid) / count($centroid);  // Calculate average for each centroid
+            $centroidAverages[$clusterName] = $average;
+        }
+
+        // --- Calculate SSE total (for final results) ---
         $distanceTable = [];
         $sseTotal = 0.0;
 
@@ -201,28 +215,30 @@ class ProsesController extends Controller
         $newCentroids = $centroids;
 
         // --- Hitung jumlah total dataset ---
-        $totalDataset = Dataset::count(); // <-- Calculate the total number of datasets here
+        $totalDataset = Dataset::count();
 
         // --- Retrieve all datasets ---
-        $allDatasets = Dataset::select('id', 'nama_platform_e_wallet')->orderBy('id')->get(); // <-- Retrieve all datasets here
+        $allDatasets = Dataset::select('id', 'nama_platform_e_wallet')->orderBy('id')->get();
 
-        // Kirim data untuk menampilkan iterasi
+        // Return the view with the new data
         return view('pages.proses.index', compact(
-            'totalDataset',   // Pass totalDataset here
-            'allDatasets',    // Pass allDatasets here
+            'totalDataset',
+            'allDatasets',
             'selectedDatasets',
             'distanceTable',
             'features',
             'clusterResults',
             'sseTotal',
             'newCentroids',
-            'allIterations',   // Pass allIterations here
-            'allDistancesPerIteration', // Pass allDistancesPerIteration to view
-            'allClusterResultsPerIteration' // Pass cluster results per iteration to view
+            'centroidAverages',
+            'allIterations',
+            'allDistancesPerIteration',
+            'allClusterResultsPerIteration',
+            'allSSEPerIteration', // Pass allSSEPerIteration to view
+            'totalSSE'  // Pass totalSSE to view
         ))->with('selectedCluster', $k)
             ->with('iterationsUsed', $iterationsUsed);
     }
-
 
     // ---------- helpers ----------
     private function squaredEuclideanVec(array $a, array $b, array $features): float
