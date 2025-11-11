@@ -145,12 +145,70 @@
                     </div>
                 @endif
 
-                {{-- Tabel hasil iterasi (sebelum konvergen) --}}
-                @if (!empty($allIterations))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Hasil Iterasi (Sebelum Konvergen)</h5>
-                        @foreach ($allIterations as $iteration)
-                            <h6>Iterasi {{ $iteration['iteration'] }}</h6>
+                {{-- Grouped Tables per Iteration --}}
+                @if (!empty($allIterations) || !empty($allDistancesPerIteration) || !empty($allClusterResultsPerIteration))
+                    @foreach ($allIterations as $iterationIndex => $iteration)
+                        <div class="mt-4">
+                            <h5 class="mb-3">Iterasi {{ $iterationIndex + 1 }}</h5>
+
+                            {{-- Tabel Perhitungan Jarak Euclidean per Iterasi --}}
+                            <h6>Perhitungan Jarak Euclidean</h6>
+                            @if (isset($allDistancesPerIteration[$iterationIndex]))
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>ID</th>
+                                            <th>Nama Platform E-Wallet</th>
+                                            @for ($i = 1; $i <= $selectedCluster; $i++)
+                                                <th>Jarak ke C{{ $i }}</th>
+                                            @endfor
+                                            <th>Cluster Terdekat</th>
+                                            <th>Jarak Terdekat</th>
+                                            <th>Jarak Terdekat ^2</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($allDistancesPerIteration[$iterationIndex] as $i => $row)
+                                            <tr>
+                                                <td>{{ $i + 1 }}</td>
+                                                <td>{{ $row['dataset']->id }}</td>
+                                                <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
+                                                @foreach ($row['distances'] as $d)
+                                                    <td>{{ number_format($d, 4) }}</td>
+                                                @endforeach
+                                                <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
+                                                <td>{{ number_format($row['dmin'], 4) }}</td>
+                                                <td>{{ number_format($row['dminSquared'], 4) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endif
+
+                            {{-- Tabel Hasil Cluster dan Nama Platform E-Wallet per Iterasi --}}
+                            <h6>Hasil Cluster dan Nama Platform E-Wallet</h6>
+                            @if (isset($allClusterResultsPerIteration[$iterationIndex]))
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Cluster</th>
+                                            <th>Nama Platform E-Wallet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($allClusterResultsPerIteration[$iterationIndex] as $result)
+                                            <tr>
+                                                <td>C{{ $result['cluster'] }}</td>
+                                                <td>{{ $result['platforms'] ?: '-' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endif
+
+                            {{-- Tabel Hasil Iterasi --}}
+                            <h6>Hasil Iterasi</h6>
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
@@ -171,131 +229,8 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                        @endforeach
-                    </div>
-                @endif
-                @if (!empty($allDistancesPerIteration))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Perhitungan Jarak Euclidean (Setiap Data → C1..C{{ $selectedCluster }}) per
-                            Iterasi</h5>
-                        @foreach ($allDistancesPerIteration as $iterationIndex => $distanceTableForIteration)
-                            <h6>Iterasi {{ $iterationIndex + 1 }}</h6>
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>ID</th>
-                                        <th>Nama Platform E-Wallet</th>
-                                        @for ($i = 1; $i <= $selectedCluster; $i++)
-                                            <th>Jarak ke C{{ $i }}</th>
-                                        @endfor
-                                        <th>Cluster Terdekat</th>
-                                        <th>Jarak Terdekat</th>
-                                        <th>Jarak Terdekat ^2</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($distanceTableForIteration as $i => $row)
-                                        <tr>
-                                            <td>{{ $i + 1 }}</td>
-                                            <td>{{ $row['dataset']->id }}</td>
-                                            <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
-                                            @foreach ($row['distances'] as $d)
-                                                <td>{{ number_format($d, 4) }}</td>
-                                            @endforeach
-                                            <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
-                                            <td>{{ number_format($row['dmin'], 4) }}</td>
-                                            <td>{{ number_format($row['dminSquared'], 4) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @endforeach
-                    </div>
-                @endif
-                @if (!empty($allClusterResultsPerIteration))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Hasil Cluster dan Nama Platform E-Wallet per Iterasi</h5>
-                        @foreach ($allClusterResultsPerIteration as $iterationIndex => $clusterResultsForIteration)
-                            <h6>Iterasi {{ $iterationIndex + 1 }}</h6>
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Cluster</th>
-                                        <th>Nama Platform E-Wallet</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($clusterResultsForIteration as $result)
-                                        <tr>
-                                            <td>C{{ $result['cluster'] }}</td>
-                                            <td>{{ $result['platforms'] ?: '-' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @endforeach
-                    </div>
-                @endif
-
-                {{-- Tabel perhitungan jarak Euclidean --}}
-                @if (!empty($distanceTable))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Perhitungan Jarak Euclidean (setiap data → C1..C{{ $selectedCluster }})</h5>
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>ID</th>
-                                    <th>Nama Platform E-Wallet</th>
-                                    @for ($i = 1; $i <= ($selectedCluster ?? 0); $i++)
-                                        <th>Jarak ke C{{ $i }}</th>
-                                    @endfor
-                                    <th>Cluster Terdekat</th>
-                                    <th>Jarak Terdekat</th>
-                                    <th>Jarak Terdekat ^2</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($distanceTable as $i => $row)
-                                    <tr>
-                                        <td>{{ $i + 1 }}</td>
-                                        <td>{{ $row['dataset']->id }}</td>
-                                        <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
-                                        @foreach ($row['distances'] as $d)
-                                            <td>{{ number_format($d, 4) }}</td>
-                                        @endforeach
-                                        <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
-                                        <td>{{ number_format($row['dmin'], 4) }}</td>
-                                        <td>{{ number_format($row['dminSquared'], 4) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-
-                {{-- Hasil Cluster: daftar anggota --}}
-                @if (!empty($clusterResults))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Hasil Cluster dan Nama Platform E-Wallet</h5>
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Cluster</th>
-                                    <th>Nama Platform E-Wallet</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($clusterResults as $result)
-                                    <tr>
-                                        <td>C{{ $result['cluster'] }}</td>
-                                        <td>{{ $result['platforms'] ?: '-' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                        </div>
+                    @endforeach
                 @endif
 
                 {{-- Total SSE --}}
