@@ -229,6 +229,15 @@
                                     @endforeach
                                 </tbody>
                             </table>
+
+                            {{-- SSE Per Iterasi --}}
+                            <div class="mt-4">
+                                <h6>SSE Iterasi {{ $iterationIndex + 1 }}</h6>
+                                @if (isset($allSSEPerIteration[$iterationIndex]))
+                                    <p>SSE pada iterasi {{ $iterationIndex + 1 }}:
+                                        <strong>{{ number_format($allSSEPerIteration[$iterationIndex], 4) }}</strong></p>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 @endif
@@ -240,6 +249,7 @@
                         <p>SSE Total: <strong>{{ number_format($sseTotal, 4) }}</strong></p>
                     </div>
                 @endif
+
 
                 {{-- Centroid akhir (konvergen) --}}
                 @if (!empty($newCentroids))
