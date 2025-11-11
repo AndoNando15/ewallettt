@@ -174,6 +174,14 @@ class ProsesController extends Controller
             $average = array_sum($centroid) / count($centroid);  // Calculate average for each centroid
             $centroidAverages[$clusterName] = $average;
         }
+        // --- Calculate centroid averages for each cluster ---
+        $centroidSum = [];
+        foreach ($newCentroids as $index => $centroid) {
+            $clusterName = 'C' . ($index + 1); // C1, C2, C3, ...
+            $sum = array_sum($centroid);  // Calculate sum for each centroid
+            $centroidSum[$clusterName] = $sum;
+        }
+
 
         // --- Calculate SSE total (for final results) ---
         $distanceTable = [];
@@ -231,6 +239,7 @@ class ProsesController extends Controller
             'sseTotal',
             'newCentroids',
             'centroidAverages',
+            'centroidSum',
             'allIterations',
             'allDistancesPerIteration',
             'allClusterResultsPerIteration',

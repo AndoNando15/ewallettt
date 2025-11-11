@@ -316,32 +316,29 @@
                         <h6 class="mt-4"><strong>Total SSE:</strong> {{ number_format($totalSSE, 4) }}</h6>
                     </div>
                 @endif
-                {{-- SSE per Iterasi --}}
-                @if (!empty($allSSEPerIteration))
+
+                {{-- SSW --}}
+                @if (!empty($centroidSum))
                     <div class="mt-4">
-                        <h5 class="mb-3">SSE per Iterasi</h5>
+                        <h5 class="mb-3">SSW</h5>
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>Iterasi</th>
-                                    <th>SSE</th>
+                                    <th>Cluster</th>
+                                    <th>Nilai</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($allSSEPerIteration as $iterationIndex => $sse)
+                                @foreach ($centroidSum as $clusterName => $sum)
                                     <tr>
-                                        <td>Iterasi {{ $iterationIndex + 1 }}</td>
-                                        <td>{{ number_format($sse, 4) }}</td>
+                                        <td>{{ $clusterName }}</td>
+                                        <td>{{ number_format($sum, 4) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
-                        {{-- Total SSE --}}
-                        <h6 class="mt-4"><strong>Total SSE:</strong> {{ number_format($totalSSE, 4) }}</h6>
                     </div>
                 @endif
-
-
 
 
 
