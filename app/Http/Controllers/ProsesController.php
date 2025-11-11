@@ -62,6 +62,7 @@ class ProsesController extends Controller
         // Menyimpan hasil iterasi dan jarak Euclidean per iterasi
         $allIterations = [];
         $allDistancesPerIteration = [];  // This will store the distances per iteration
+        $allClusterResultsPerIteration = []; // This will store cluster results per iteration
 
         for ($iter = 1; $iter <= $maxIterations; $iter++) {
             $iterationsUsed = $iter;
@@ -136,7 +137,17 @@ class ProsesController extends Controller
             // Save the distance table for this iteration
             $allDistancesPerIteration[] = $distanceTableForThisIteration;
 
-            // 4) Cek konvergensi (max L2 diff antar centroid)
+            // 4) Save the cluster results per iteration (platforms assigned to each cluster)
+            $clusterResultsForThisIteration = [];
+            foreach ($clustersIds as $idx => $members) {
+                $clusterResultsForThisIteration[] = [
+                    'cluster' => $idx + 1,
+                    'platforms' => implode(', ', array_map(fn($id) => $names[$id], $members)),
+                ];
+            }
+            $allClusterResultsPerIteration[] = $clusterResultsForThisIteration;
+
+            // 5) Cek konvergensi (max L2 diff antar centroid)
             $maxShift = 0.0;
             for ($i = 0; $i < $k; $i++) {
                 $shift = sqrt($this->squaredEuclideanVec($centroids[$i], $newCentroids[$i], $features));
@@ -206,7 +217,8 @@ class ProsesController extends Controller
             'sseTotal',
             'newCentroids',
             'allIterations',   // Pass allIterations here
-            'allDistancesPerIteration' // Pass allDistancesPerIteration to view
+            'allDistancesPerIteration', // Pass allDistancesPerIteration to view
+            'allClusterResultsPerIteration' // Pass cluster results per iteration to view
         ))->with('selectedCluster', $k)
             ->with('iterationsUsed', $iterationsUsed);
     }

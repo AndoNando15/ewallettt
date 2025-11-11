@@ -213,6 +213,30 @@
                         @endforeach
                     </div>
                 @endif
+                @if (!empty($allClusterResultsPerIteration))
+                    <div class="mt-4">
+                        <h5 class="mb-3">Hasil Cluster dan Nama Platform E-Wallet per Iterasi</h5>
+                        @foreach ($allClusterResultsPerIteration as $iterationIndex => $clusterResultsForIteration)
+                            <h6>Iterasi {{ $iterationIndex + 1 }}</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Cluster</th>
+                                        <th>Nama Platform E-Wallet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($clusterResultsForIteration as $result)
+                                        <tr>
+                                            <td>C{{ $result['cluster'] }}</td>
+                                            <td>{{ $result['platforms'] ?: '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endforeach
+                    </div>
+                @endif
 
                 {{-- Tabel perhitungan jarak Euclidean --}}
                 @if (!empty($distanceTable))
