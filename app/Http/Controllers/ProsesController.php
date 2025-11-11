@@ -227,7 +227,14 @@ class ProsesController extends Controller
 
         // --- Retrieve all datasets ---
         $allDatasets = Dataset::select('id', 'nama_platform_e_wallet')->orderBy('id')->get();
+        // Normalisasi centroid agar jadi array dua dimensi numerik
+        $finalCentroids = array_values(array_map(function ($c) {
+            // Jika elemen masih memiliki key 'centroid', ambil nilainya
+            return isset($c['centroid']) ? array_values($c['centroid']) : array_values($c);
+        }, $centroids));
 
+        // Hitung DBI antar centroid
+        $dbiPerCentroid = $this->calculateDBIPerCentroid($finalCentroids);
         // Return the view with the new data
         return view('pages.proses.index', compact(
             'totalDataset',
@@ -239,6 +246,7 @@ class ProsesController extends Controller
             'sseTotal',
             'newCentroids',
             'centroidAverages',
+            'dbiPerCentroid',
             'centroidSum',
             'allIterations',
             'allDistancesPerIteration',
@@ -261,4 +269,30 @@ class ProsesController extends Controller
         }
         return $sum;
     }
+    public function calculateDBIPerCentroid($centroids)
+    {
+        $result = [];
+        $count = count($centroids);
+
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = $i + 1; $j < $count; $j++) {
+                $sumSq = 0;
+                $dim = count($centroids[$i]);
+
+                for ($k = 0; $k < $dim; $k++) {
+                    $sumSq += pow($centroids[$i][$k] - $centroids[$j][$k], 2);
+                }
+
+                $distance = sqrt($sumSq);
+                $result[] = [
+                    'pair' => 'C' . ($i + 1) . ' - C' . ($j + 1),
+                    'without_sqrt' => $sumSq,
+                    'euclidean' => $distance,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
 }

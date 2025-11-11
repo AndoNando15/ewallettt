@@ -340,6 +340,32 @@
                     </div>
                 @endif
 
+                {{-- DBI --}}
+                @if (!empty($dbiPerCentroid))
+                    <div class="mt-4">
+                        <h5 class="mb-3">Davies-Bouldin Index per Centroid</h5>
+                        <table class="table table-bordered text-center align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pasangan Centroid</th>
+                                    <th>Jarak (Tanpa Akar)</th>
+                                    <th>Jarak Euclidean</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($dbiPerCentroid as $row)
+                                    <tr>
+                                        <td>{{ $row['pair'] }}</td>
+                                        <td>{{ number_format($row['without_sqrt'], 6, ',', '.') }}</td>
+                                        <td>{{ number_format($row['euclidean'], 4, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+
+
 
 
             </div>
