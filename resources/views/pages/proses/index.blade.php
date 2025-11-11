@@ -41,9 +41,8 @@
                             </option>
                             @foreach ([2, 3, 4, 5] as $k)
                                 <option value="{{ $k }}"
-                                    {{ isset($selectedCluster) && $selectedCluster == $k ? 'selected' : '' }}>
-                                    Cluster {{ $k }}
-                                </option>
+                                    {{ isset($selectedCluster) && $selectedCluster == $k ? 'selected' : '' }}>Cluster
+                                    {{ $k }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -145,78 +144,75 @@
                         </table>
                     </div>
                 @endif
-                {{-- Menampilkan Riwayat Iterasi --}}
-                @if (isset($iterationsLog))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Riwayat Iterasi</h5>
-                        @foreach ($iterationsLog as $it)
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <strong>Iterasi {{ $it['iteration'] }}</strong>
-                                    <span class="ml-2 text-muted">SSE: {{ number_format($it['sse'], 6) }}</span>
-                                </div>
-                                <div class="card-body">
-                                    {{-- Tabel Jarak Euclidean --}}
-                                    <h6>Perhitungan Jarak Euclidean (Iterasi {{ $it['iteration'] }})</h6>
-                                    <table class="table table-sm table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Nama Platform E-Wallet</th>
-                                                @for ($i = 1; $i <= $selectedCluster; $i++)
-                                                    <th>Jarak ke C{{ $i }}</th>
-                                                @endfor
-                                                <th>Cluster Terdekat</th>
-                                                <th>Jarak Terdekat</th>
-                                                <th>Jarak Terdekat ^2</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($it['distanceTable'] as $i => $row)
-                                                <tr>
-                                                    <td>{{ $i + 1 }}</td>
-                                                    <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
-                                                    @foreach ($row['distances'] as $d)
-                                                        <td>{{ number_format($d, 4) }}</td>
-                                                    @endforeach
-                                                    </td>
-                                                    <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span>
-                                                    <td>{{ number_format($row['dmin'], 4) }}</td>
-                                                    <td>{{ number_format($row['dminSquared'], 4) }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
 
-                                    {{-- Centroid iterasi ini --}}
-                                    <h6>Centroid (Iterasi {{ $it['iteration'] }})</h6>
-                                    <table class="table table-sm table-bordered mb-3">
-                                        <thead>
-                                            <tr>
-                                                <th>Cluster</th>
-                                                @foreach ($features as $f)
-                                                    <th>{{ $f }}</th>
-                                                @endforeach
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($it['centroids'] as $idx => $c)
-                                                <tr>
-                                                    <td>C{{ $idx + 1 }}</td>
-                                                    @foreach ($features as $f)
-                                                        <td>{{ number_format($c[$f] ?? 0, 6) }}</td>
-                                                    @endforeach
-                                                </tr>
+                {{-- Tabel hasil iterasi (sebelum konvergen) --}}
+                @if (!empty($allIterations))
+                    <div class="mt-4">
+                        <h5 class="mb-3">Hasil Iterasi (Sebelum Konvergen)</h5>
+                        @foreach ($allIterations as $iteration)
+                            <h6>Iterasi {{ $iteration['iteration'] }}</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Cluster</th>
+                                        @foreach ($features as $feature)
+                                            <th>{{ $feature }}</th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($iteration['centroids'] as $index => $centroid)
+                                        <tr>
+                                            <td>C{{ $index + 1 }}</td>
+                                            @foreach ($features as $f)
+                                                <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
                                             @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         @endforeach
                     </div>
                 @endif
-
-
+                @if (!empty($allDistancesPerIteration))
+                    <div class="mt-4">
+                        <h5 class="mb-3">Perhitungan Jarak Euclidean (Setiap Data → C1..C{{ $selectedCluster }}) per
+                            Iterasi</h5>
+                        @foreach ($allDistancesPerIteration as $iterationIndex => $distanceTableForIteration)
+                            <h6>Iterasi {{ $iterationIndex + 1 }}</h6>
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>ID</th>
+                                        <th>Nama Platform E-Wallet</th>
+                                        @for ($i = 1; $i <= $selectedCluster; $i++)
+                                            <th>Jarak ke C{{ $i }}</th>
+                                        @endfor
+                                        <th>Cluster Terdekat</th>
+                                        <th>Jarak Terdekat</th>
+                                        <th>Jarak Terdekat ^2</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($distanceTableForIteration as $i => $row)
+                                        <tr>
+                                            <td>{{ $i + 1 }}</td>
+                                            <td>{{ $row['dataset']->id }}</td>
+                                            <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
+                                            @foreach ($row['distances'] as $d)
+                                                <td>{{ number_format($d, 4) }}</td>
+                                            @endforeach
+                                            <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
+                                            <td>{{ number_format($row['dmin'], 4) }}</td>
+                                            <td>{{ number_format($row['dminSquared'], 4) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endforeach
+                    </div>
+                @endif
 
                 {{-- Tabel perhitungan jarak Euclidean --}}
                 @if (!empty($distanceTable))
@@ -306,34 +302,6 @@
                                         @foreach ($features as $f)
                                             <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
                                         @endforeach
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-                {{-- Menampilkan Hasil Iterasi --}}
-                @if (isset($iterations))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Hasil Iterasi</h5>
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Iteration</th>
-                                    <th>Centroid</th>
-                                    <th>SSE (Sum of Squared Errors)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($iterations as $iteration)
-                                    <tr>
-                                        <td>{{ $iteration['iteration'] }}</td>
-                                        <td>
-                                            @foreach ($iteration['centroids'] as $feature => $value)
-                                                {{ $feature }}: {{ number_format($value, 6) }}<br>
-                                            @endforeach
-                                        </td>
-                                        <td>{{ number_format($iteration['sse'], 6) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
