@@ -64,7 +64,8 @@ class ProsesController extends Controller
         $allClusterResultsPerIteration = [];
         $allSSEPerIteration = [];  // To store SSE for each iteration
 
-        $previousDistances = []; // To track the previous iteration's squared distances
+        // Tambahan untuk melacak perubahan cluster
+        $previousAssignment = []; // <-- tambahan
 
         for ($iter = 1; $iter <= $maxIterations; $iter++) {
             $iterationsUsed = $iter;
@@ -84,7 +85,7 @@ class ProsesController extends Controller
                 $clustersIds[$bestIdx][] = $pid;
             }
 
-            // 2) Update: hitung centroid baru via rata-rata fitur tiap cluster
+            // 2) Update centroid baru
             $newCentroids = [];
             foreach ($clustersIds as $idx => $members) {
                 if (count($members) === 0) {
@@ -104,55 +105,68 @@ class ProsesController extends Controller
                 $newCentroids[$idx] = $mean;
             }
 
-            // Save the centroid and cluster results per iteration
+            // Save iteration
             $allIterations[] = [
                 'iteration' => $iter,
                 'centroids' => $newCentroids,
                 'clusters' => $clustersIds
             ];
 
-            // 3) Calculate SSE for this iteration
+            // -------- SSE & Distance Table (tambahan perubahan ada di sini)
             $sseIteration = 0.0;
             $distanceTableForThisIteration = [];
+            $currentAssignment = []; // <-- tambahan
+
             foreach ($points as $p) {
                 $vec = $X[$p->id];
                 $dList = [];
                 $bestIdx = 0;
                 $bestD2 = INF;
+
                 foreach ($centroids as $idx => $cvec) {
                     $d2 = $this->squaredEuclideanVec($vec, $cvec, $features);
                     $d = sqrt($d2);
                     $dList[] = $d;
+
                     if ($d2 < $bestD2) {
                         $bestD2 = $d2;
                         $bestIdx = $idx;
                     }
                 }
+
                 $sseIteration += $bestD2;
 
-                // Track distances and compare with the previous iteration
-                $distanceChange = null;
-                if ($iter > 1) { // If it's not the first iteration
-                    $distanceChange = isset($previousDistances[$p->id]) ? $previousDistances[$p->id] : null;
+                // ===== Tambahan: cek perubahan cluster =====
+                $changed = 'Tidak';
+                $assignedCluster = $bestIdx + 1;
+
+                if (isset($previousAssignment[$p->id])) {
+                    if ($previousAssignment[$p->id] != $assignedCluster) {
+                        $changed = 'Iya';
+                    }
                 }
 
-                // Store the current squared distance for the next iteration comparison
-                $previousDistances[$p->id] = $bestD2;
+                $currentAssignment[$p->id] = $assignedCluster;
+                // ============================================
 
                 $distanceTableForThisIteration[] = [
                     'dataset' => $p,
                     'distances' => $dList,
-                    'nearest' => $bestIdx + 1,  // Cluster start from 1
+                    'nearest' => $assignedCluster,
                     'dmin' => sqrt($bestD2),
                     'dminSquared' => $bestD2,
-                    'distanceChange' => $distanceChange, // To track change in distance for comparison
+                    'changed' => $changed // <-- tambahan
                 ];
             }
 
+            // simpan
             $allDistancesPerIteration[] = $distanceTableForThisIteration;
-            $allSSEPerIteration[] = $sseIteration;  // Store SSE for this iteration
+            $allSSEPerIteration[] = $sseIteration;
 
-            // 4) Save the cluster results per iteration (platforms assigned to each cluster)
+            // update untuk iterasi berikutnya
+            $previousAssignment = $currentAssignment; // <-- tambahan
+
+            // 4) Save cluster results
             $clusterResultsForThisIteration = [];
             foreach ($clustersIds as $idx => $members) {
                 $clusterResultsForThisIteration[] = [
@@ -162,7 +176,7 @@ class ProsesController extends Controller
             }
             $allClusterResultsPerIteration[] = $clusterResultsForThisIteration;
 
-            // 5) Cek konvergensi (max L2 diff antar centroid)
+            // 5) Check convergence
             $maxShift = 0.0;
             for ($i = 0; $i < $k; $i++) {
                 $shift = sqrt($this->squaredEuclideanVec($centroids[$i], $newCentroids[$i], $features));
@@ -171,6 +185,7 @@ class ProsesController extends Controller
             }
 
             $centroids = $newCentroids;
+
             if ($maxShift < $threshold) {
                 break;
             }
