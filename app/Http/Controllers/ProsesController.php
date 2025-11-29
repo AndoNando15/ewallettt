@@ -64,6 +64,8 @@ class ProsesController extends Controller
         $allClusterResultsPerIteration = [];
         $allSSEPerIteration = [];  // To store SSE for each iteration
 
+        $previousDistances = []; // To track the previous iteration's squared distances
+
         for ($iter = 1; $iter <= $maxIterations; $iter++) {
             $iterationsUsed = $iter;
             $clustersIds = array_fill(0, $k, []);
@@ -128,12 +130,22 @@ class ProsesController extends Controller
                 }
                 $sseIteration += $bestD2;
 
+                // Track distances and compare with the previous iteration
+                $distanceChange = null;
+                if ($iter > 1) { // If it's not the first iteration
+                    $distanceChange = isset($previousDistances[$p->id]) ? $previousDistances[$p->id] : null;
+                }
+
+                // Store the current squared distance for the next iteration comparison
+                $previousDistances[$p->id] = $bestD2;
+
                 $distanceTableForThisIteration[] = [
                     'dataset' => $p,
                     'distances' => $dList,
                     'nearest' => $bestIdx + 1,  // Cluster start from 1
                     'dmin' => sqrt($bestD2),
                     'dminSquared' => $bestD2,
+                    'distanceChange' => $distanceChange, // To track change in distance for comparison
                 ];
             }
 
@@ -163,6 +175,7 @@ class ProsesController extends Controller
                 break;
             }
         }
+
 
         // Calculate the total SSE across all iterations
         $totalSSE = array_sum($allSSEPerIteration);

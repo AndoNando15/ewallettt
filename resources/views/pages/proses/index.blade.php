@@ -163,8 +163,9 @@
                                             @for ($i = 1; $i <= $selectedCluster; $i++)
                                                 <th>Jarak ke C{{ $i }}</th>
                                             @endfor
-                                            <th>Cluster Terdekat</th>
                                             <th>Jarak Terdekat</th>
+                                            <th>Cluster Terdekat</th>
+                                            <th>Perubahan</th> {{-- New column --}}
                                             <th>Jarak Terdekat ^2</th>
                                         </tr>
                                     </thead>
@@ -174,12 +175,21 @@
                                                 <td>{{ $i + 1 }}</td>
                                                 <td>{{ $row['dataset']->id }}</td>
                                                 <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
+                                                <td>{{ number_format($row['dmin'], 4) }}</td>
                                                 @foreach ($row['distances'] as $d)
                                                     <td>{{ number_format($d, 4) }}</td>
                                                 @endforeach
                                                 <td><span class="badge badge-primary">C{{ $row['nearest'] }}</span></td>
-                                                <td>{{ number_format($row['dmin'], 4) }}</td>
+                                                {{-- Check for changes in the squared distance --}}
+                                                <td>
+                                                    @if ($row['distanceChange'] !== null && $row['distanceChange'] != $row['dminSquared'])
+                                                        <span class="badge badge-danger">Iya</span>
+                                                    @else
+                                                        <span class="badge badge-success">Tidak</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ number_format($row['dminSquared'], 4) }}</td>
+
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -235,12 +245,14 @@
                                 <h6>SSE Iterasi {{ $iterationIndex + 1 }}</h6>
                                 @if (isset($allSSEPerIteration[$iterationIndex]))
                                     <p>SSE pada iterasi {{ $iterationIndex + 1 }}:
-                                        <strong>{{ number_format($allSSEPerIteration[$iterationIndex], 4) }}</strong></p>
+                                        <strong>{{ number_format($allSSEPerIteration[$iterationIndex], 4) }}</strong>
+                                    </p>
                                 @endif
                             </div>
                         </div>
                     @endforeach
                 @endif
+
 
                 {{-- Total SSE --}}
                 @if (isset($sseTotal))
