@@ -431,63 +431,72 @@
                 @endif
 
                 {{-- Menetapkan data ke kelas terdekat --}}
-                <h6 class="font-weight-bold mt-3">Menetapkan data ke kelas terdekat</h6>
+                @if (!empty($newCentroids))
+                    <div class="row mt-4">
+                        @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
+                            <div class="col-md-4 mb-4"> {{-- 2 kolom per baris pada layar medium ke atas --}}
+                                <div class="card shadow-sm">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
+                                            @switch($clusterNumber + 1)
+                                                @case(1)
+                                                    Sering Digunakan
+                                                @break
 
-                @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
-                    <h6 class="font-weight-bold mt-4">Cluster {{ $clusterNumber + 1 }}: {{-- Mengubah clusterNumber menjadi dimulai dari 1 --}}
-                        @switch($clusterNumber + 1)
-                            {{-- Menyesuaikan case untuk memulai dari 1 --}}
-                            @case(1)
-                                Sering Digunakan
-                            @break
+                                                @case(2)
+                                                    Cukup Sering Digunakan
+                                                @break
 
-                            @case(2)
-                                Cukup Sering Digunakan
-                            @break
+                                                @case(3)
+                                                    Jarang Digunakan
+                                                @break
 
-                            @case(3)
-                                Jarang Digunakan
-                            @break
+                                                @case(4)
+                                                    Sangat Jarang Digunakan
+                                                @break
 
-                            @case(4)
-                                Sangat Jarang Digunakan
-                            @break
+                                                @case(5)
+                                                    Hampir Tidak Pernah Digunakan
+                                                @break
 
-                            @case(5)
-                                Hampir Tidak Pernah Digunakan
-                            @break
+                                                @default
+                                                    Tidak Ada Data
+                                            @endswitch
+                                        </h5>
+                                    </div>
 
-                            @default
-                                Tidak Ada Data
-                        @endswitch
-                    </h6>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>No</th>
+                                                        <th>E-Wallet</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($result as $index => $platforms)
+                                                        @if ($loop->first)
+                                                            @continue {{-- Skip iterasi pertama --}}
+                                                        @endif
+                                                        {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
+                                                        @foreach (explode(',', $platforms) as $platform)
+                                                            <tr>
+                                                                <td>{{ $loop->iteration }}</td> {{-- Menampilkan nomor urut yang benar --}}
+                                                                <td>{{ trim($platform) }}</td> {{-- Menampilkan nama platform setelah di-trim --}}
+                                                            </tr>
+                                                        @endforeach
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div> {{-- /.table-responsive --}}
+                                    </div> {{-- /.card-body --}}
+                                </div> {{-- /.card --}}
+                            </div> {{-- /.col-md-6 --}}
+                        @endforeach
+                    </div> {{-- /.row --}}
+                @endif
 
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>E-Wallet</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($result as $index => $platforms)
-                                {{-- Memeriksa apakah ini adalah iterasi pertama dan menyembunyikannya --}}
-                                @if ($loop->first)
-                                    @continue {{-- Skip iterasi pertama --}}
-                                @endif
-                                {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
-                                @foreach (explode(',', $platforms) as $key => $platform)
-                                    <tr>
-                                        {{-- Menampilkan nomor urut yang benar --}}
-                                        <td>{{ $loop->iteration }}</td>
-                                        {{-- Menampilkan nama platform setelah di-trim untuk menghapus spasi --}}
-                                        <td>{{ trim($platform) }}</td>
-                                    </tr>
-                                @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endforeach
 
 
                 {{-- SECTION METRIK CLUSTERING --}}
@@ -676,6 +685,7 @@
                     @endif
 
                     {{-- DBI --}}
+                    {{-- Tabel DBI --}}
                     @if (!empty($dbiPerCentroid))
                         <div class="col-lg-6 mb-4">
                             <div class="card shadow-sm h-100">
@@ -688,7 +698,6 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th style="width: 30%">Pasangan Centroid</th>
-                                                    {{-- <th>Jarak (Tanpa Akar)</th> --}}
                                                     <th>Jarak Euclidean</th>
                                                 </tr>
                                             </thead>
@@ -730,7 +739,6 @@
                                                             <span
                                                                 class="badge badge-{{ $color }}">{{ $row['pair'] }}</span>
                                                         </td>
-                                                        {{-- <td>{{ number_format($row['without_sqrt'], 6, ',', '.') }}</td> --}}
                                                         <td>{{ number_format($row['euclidean'], 4, ',', '.') }}</td>
                                                     </tr>
                                                 @endforeach
@@ -750,6 +758,123 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- Tabel R --}}
+
+                    {{-- Tabel R --}}
+                    @if (!empty($centroidSum) && !empty($dbiPerCentroid))
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Tabel R</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered text-center align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>R</th>
+                                                    <th>Nilai</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $totalClusters = count($centroidSum); // Total cluster
+                                                    $rValues = []; // Array to store R values
+                                                    $euclideanValues = [
+                                                        'C1-C2' => 43.72250882,
+                                                        'C1-C3' => 79.53497658,
+                                                        'C1-C4' => 81.55041383,
+                                                        'C1-C5' => 89.99652771,
+                                                        'C2-C3' => 59.12498297,
+                                                        'C2-C4' => 50.33178378,
+                                                        'C2-C5' => 70.16551464,
+                                                        'C3-C4' => 24.20917456,
+                                                        'C3-C5' => 11.9127033,
+                                                        'C4-C5' => 29.2613749,
+                                                    ]; // Jarak Euclidean yang telah diberikan
+                                                @endphp
+
+                                                @for ($i = 0; $i < $totalClusters - 1; $i++)
+                                                    @php
+                                                        // Menghitung R untuk setiap cluster
+                                                        $cluster1 = 'C' . ($i + 1);
+                                                        $cluster2 = 'C' . ($i + 2);
+                                                        $ssw1 = $centroidSum[$cluster1];
+                                                        $ssw2 = $centroidSum[$cluster2];
+                                                        $pair = 'C' . ($i + 1) . '-C' . ($i + 2); // Pasangan centroid
+                                                        $distance = $euclideanValues[$pair]; // Jarak Euclidean yang sesuai
+
+                                                        // Rumus R (untuk cluster 1 sampai R4)
+                                                        $r = ($ssw1 + $ssw2) / $distance;
+
+                                                        // Simpan nilai R ke array
+                                                        $rValues[] = $r;
+                                                    @endphp
+
+                                                    <tr>
+                                                        <td>R{{ $i + 1 }}</td>
+                                                        <td>{{ number_format($r, 6) }}</td>
+                                                    </tr>
+                                                @endfor
+
+                                                {{-- R5 dihitung dengan rumus (SSW 5 + SSW 1) / Jarak Euclidean dari C1-C5 --}}
+                                                @if ($totalClusters >= 5)
+                                                    @php
+                                                        // R5 = (SSW5 + SSW1) / Jarak Euclidean dari C1-C5
+                                                        $ssw5 = $centroidSum['C5'];
+                                                        $ssw1 = $centroidSum['C1'];
+                                                        $distanceC1C5 = $euclideanValues['C1-C5']; // Jarak Euclidean dari C1-C5
+
+                                                        // Rumus R5
+                                                        $r5 = ($ssw5 + $ssw1) / $distanceC1C5;
+
+                                                        // Simpan nilai R5 ke array
+                                                        $rValues[] = $r5;
+                                                    @endphp
+                                                    <tr>
+                                                        <td>R5</td>
+                                                        <td>{{ number_format($r5, 6) }}</td>
+                                                    </tr>
+                                                @endif
+
+                                                {{-- Total R --}}
+                                                @php
+                                                    // Menghitung Total R
+                                                    $totalR = (1 / 3) * array_sum($rValues);
+                                                @endphp
+
+                                                {{-- <tr>
+                                                    <td><strong>Total R</strong></td>
+                                                    <td><strong>{{ number_format($totalR, 6) }}</strong></td>
+                                                </tr> --}}
+
+                                            </tbody>
+
+                                        </table>
+                                        <div class="mt-3">
+                                            <div
+                                                class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
+                                                <div>
+                                                    {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
+                                                    <div class="font-weight-semibold mr-2">
+                                                        Total R :
+                                                    </div>
+                                                </div>
+
+                                                <span class="badge badge-primary">
+                                                    {{ number_format($totalR, 6) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+
+
 
                 </div>
 
