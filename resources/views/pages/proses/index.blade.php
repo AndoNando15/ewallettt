@@ -230,7 +230,8 @@
                             @endif
 
                             {{-- Tabel Hasil Cluster dan Nama Platform E-Wallet per Iterasi --}}
-                            <h6 class="font-weight-bold mt-3">Hasil Cluster dan Nama Platform E-Wallet</h6>
+                            <h6 class="font-weight-bold mt-3">Menetapkan data ke kelas terdekat
+                            </h6>
                             @if (isset($allClusterResultsPerIteration[$iterationIndex]))
                                 <table class="table table-bordered">
                                     <thead>
@@ -279,7 +280,7 @@
                             @endif
 
                             {{-- Tabel Hasil Iterasi --}}
-                            <h6 class="font-weight-bold mt-4">Hasil Iterasi</h6>
+                            <h6 class="font-weight-bold mt-4">Centroid baru</h6>
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
@@ -429,6 +430,66 @@
                     </div> {{-- /.row --}}
                 @endif
 
+                {{-- Menetapkan data ke kelas terdekat --}}
+                <h6 class="font-weight-bold mt-3">Menetapkan data ke kelas terdekat</h6>
+
+                @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
+                    <h6 class="font-weight-bold mt-4">Cluster {{ $clusterNumber + 1 }}: {{-- Mengubah clusterNumber menjadi dimulai dari 1 --}}
+                        @switch($clusterNumber + 1)
+                            {{-- Menyesuaikan case untuk memulai dari 1 --}}
+                            @case(1)
+                                Sering Digunakan
+                            @break
+
+                            @case(2)
+                                Cukup Sering Digunakan
+                            @break
+
+                            @case(3)
+                                Jarang Digunakan
+                            @break
+
+                            @case(4)
+                                Sangat Jarang Digunakan
+                            @break
+
+                            @case(5)
+                                Hampir Tidak Pernah Digunakan
+                            @break
+
+                            @default
+                                Tidak Ada Data
+                        @endswitch
+                    </h6>
+
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>E-Wallet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($result as $index => $platforms)
+                                {{-- Memeriksa apakah ini adalah iterasi pertama dan menyembunyikannya --}}
+                                @if ($loop->first)
+                                    @continue {{-- Skip iterasi pertama --}}
+                                @endif
+                                {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
+                                @foreach (explode(',', $platforms) as $key => $platform)
+                                    <tr>
+                                        {{-- Menampilkan nomor urut yang benar --}}
+                                        <td>{{ $loop->iteration }}</td>
+                                        {{-- Menampilkan nama platform setelah di-trim untuk menghapus spasi --}}
+                                        <td>{{ trim($platform) }}</td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endforeach
+
+
                 {{-- SECTION METRIK CLUSTERING --}}
                 <div class="row mt-4">
 
@@ -531,7 +592,7 @@
                                             <div>
                                                 {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
                                                 <div class="font-weight-semibold mr-2">
-                                                    SSE Iterasi :
+                                                    SSE Per Iterasi :
                                                 </div>
                                             </div>
 
@@ -627,7 +688,7 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th style="width: 30%">Pasangan Centroid</th>
-                                                    <th>Jarak (Tanpa Akar)</th>
+                                                    {{-- <th>Jarak (Tanpa Akar)</th> --}}
                                                     <th>Jarak Euclidean</th>
                                                 </tr>
                                             </thead>
@@ -669,7 +730,7 @@
                                                             <span
                                                                 class="badge badge-{{ $color }}">{{ $row['pair'] }}</span>
                                                         </td>
-                                                        <td>{{ number_format($row['without_sqrt'], 6, ',', '.') }}</td>
+                                                        {{-- <td>{{ number_format($row['without_sqrt'], 6, ',', '.') }}</td> --}}
                                                         <td>{{ number_format($row['euclidean'], 4, ',', '.') }}</td>
                                                     </tr>
                                                 @endforeach
