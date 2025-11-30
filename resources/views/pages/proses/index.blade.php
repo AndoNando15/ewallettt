@@ -759,24 +759,18 @@
                         </div>
                     @endif
 
-                    {{-- Tabel R --}}
 
                     {{-- Tabel R --}}
                     @if (!empty($centroidSum) && !empty($dbiPerCentroid))
                         <div class="col-lg-6 mb-4">
                             <div class="card shadow-sm h-100">
                                 <div class="card-header">
-                                    <h5 class="mb-0">Tabel R</h5>
+                                    <h5 class="mb-0">Tabel Perhitungan R</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
                                         <table class="table table-sm table-bordered text-center align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>R</th>
-                                                    <th>Nilai</th>
-                                                </tr>
-                                            </thead>
+
                                             <tbody>
                                                 @php
                                                     $totalClusters = count($centroidSum); // Total cluster
@@ -837,34 +831,33 @@
                                                 @endphp
 
                                                 <table class="table table-bordered">
-                                                    <thead>
+                                                    <thead class="table-light">
                                                         <tr>
-                                                            <th>Pair</th>
-                                                            <th>SSW A</th>
-                                                            <th>SSW B</th>
-                                                            <th>Distance</th>
-                                                            <th>R</th>
+                                                            <th style="width: 30%">Centorid</th>
+                                                            <th>Nilai R</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
+
+                                                        @php
+                                                            $rValues = [];
+                                                        @endphp
+
+                                                        {{-- R1 sampai R(n-1) --}}
                                                         @for ($i = 1; $i < $totalClusters; $i++)
                                                             @php
-                                                                $a = 'C' . $i;
+                                                                $a = "C{$i}";
                                                                 $b = 'C' . ($i + 1);
-                                                                $pairLabel = $a . '-' . $b;
+                                                                $pairLabel = "{$a}-{$b}";
 
-                                                                // ambil SSW (pastikan key ada)
-                                                                $ssw1 = isset($centroidSum[$a])
-                                                                    ? (float) $centroidSum[$a]
-                                                                    : null;
-                                                                $ssw2 = isset($centroidSum[$b])
-                                                                    ? (float) $centroidSum[$b]
-                                                                    : null;
+                                                                // Ambil SSW
+                                                                $ssw1 = $centroidSum[$a] ?? null;
+                                                                $ssw2 = $centroidSum[$b] ?? null;
 
-                                                                // dapatkan distance dari map
+                                                                // Ambil distance dengan closure (menjamin ambil pasangan urut)
                                                                 $distance = $getDistance($a, $b);
 
-                                                                // handle error / not found
+                                                                // Hitung R atau error message
                                                                 if ($ssw1 === null || $ssw2 === null) {
                                                                     $r = 'SSW NOT FOUND';
                                                                 } elseif ($distance === null) {
@@ -878,83 +871,74 @@
                                                             @endphp
 
                                                             <tr>
-                                                                <td>{{ $pairLabel }}</td>
+                                                                <td>R{{ $i }} ({{ $pairLabel }})</td>
                                                                 <td class="text-end">
-                                                                    @if (is_numeric($ssw1))
-                                                                        {{ number_format($ssw1, 6) }}
-                                                                    @else
-                                                                        <span
-                                                                            class="text-danger">{{ $ssw1 }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-end">
-                                                                    @if (is_numeric($ssw2))
-                                                                        {{ number_format($ssw2, 6) }}
-                                                                    @else
-                                                                        <span
-                                                                            class="text-danger">{{ $ssw2 }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-end">
-                                                                    @if (is_numeric($distance))
-                                                                        {{ number_format($distance, 8) }}
-                                                                    @else
-                                                                        <span
-                                                                            class="text-warning">{{ $distance }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-end">
-                                                                    @if (is_numeric($r))
-                                                                        {{ number_format($r, 6) }}
-                                                                    @else
-                                                                        <span
-                                                                            class="text-danger">{{ $r }}</span>
-                                                                    @endif
-                                                                </td>
+                                                                    {{ is_numeric($r) ? number_format($r, 6) : $r }}</td>
                                                             </tr>
                                                         @endfor
+
+
+                                                        {{-- R terakhir: Cn - C1 --}}
+                                                        @php
+                                                            $a = "C{$totalClusters}";
+                                                            $b = 'C1';
+                                                            $pairLabel = "{$a}-{$b}";
+
+                                                            $sswLast = $centroidSum[$a] ?? null;
+                                                            $sswFirst = $centroidSum[$b] ?? null;
+
+                                                            // Ambil distance (closure akan otomatis sort → C1-C5)
+                                                            $distanceLast = $getDistance($a, $b);
+
+                                                            if ($sswLast === null || $sswFirst === null) {
+                                                                $rLast = 'SSW NOT FOUND';
+                                                            } elseif ($distanceLast === null) {
+                                                                $rLast = 'DIST NOT FOUND';
+                                                            } elseif ($distanceLast == 0) {
+                                                                $rLast = 'DIST=0';
+                                                            } else {
+                                                                $rLast = ($sswLast + $sswFirst) / $distanceLast;
+                                                                $rValues[] = $rLast;
+                                                            }
+                                                        @endphp
+
+                                                        <tr>
+                                                            <td>R{{ $totalClusters }} ({{ $pairLabel }})</td>
+                                                            <td class="text-end">
+                                                                {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
+                                                            </td>
+                                                        </tr>
+
+
+                                                        {{-- Total R --}}
+                                                        @php
+                                                            $totalR = (1 / $totalClusters) * array_sum($rValues);
+                                                        @endphp
+
+
+                                                        {{-- <tr class="fw-bold">
+                                                            <td>Total R</td>
+                                                            <td class="text-end">{{ number_format($totalR, 6) }}</td>
+                                                        </tr> --}}
+
                                                     </tbody>
                                                 </table>
+                                                <div class="mt-3">
+                                                    <div
+                                                        class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
+                                                        <div>
+                                                            {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
+                                                            <div class="font-weight-semibold mr-2">
+                                                                Total R :
+                                                            </div>
+                                                        </div>
 
-                                                {{-- Optional: tampilkan ringkasan --}}
-                                                <div class="mt-2">
-                                                    <strong>Total R values computed:</strong> {{ count($rValues) }}
+                                                        <span class="badge badge-primary">
+                                                            {{ number_format($totalR, 6) }}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                {{-- R terakhir dihitung dengan rumus (SSW terakhir + SSW pertama) / Jarak Euclidean antara C terakhir dan C pertama --}}
-                                                @if ($totalClusters > 1)
-                                                    @php
-                                                        // Mengambil pasangan terakhir, misalnya C4 jika ada 4 cluster
-                                                        $sswLast = $centroidSum['C' . $totalClusters];
-                                                        $sswFirst = $centroidSum['C1'];
-
-                                                        // Ambil Jarak Euclidean antara C terakhir dan C pertama
-                                                        $lastPair = 'C' . $totalClusters . '-C1'; // Pasangan centroid terakhir
-                                                        $lastEuclidean =
-                                                            $dbiPerCentroid[$totalClusters - 2]['euclidean'] ?? 0.1; // Jarak Euclidean terakhir
-
-                                                        // Rumus R untuk pasangan terakhir
-                                                        $rLast = ($sswLast + $sswFirst) / $lastEuclidean;
-
-                                                        // Simpan nilai R terakhir ke array
-                                                        $rValues[] = $rLast;
-                                                    @endphp
-                                                    <tr>
-                                                        <td>R{{ $totalClusters }}</td> {{-- Menampilkan R terakhir, sesuai jumlah cluster --}}
-                                                        <td>{{ number_format($rLast, 6) }}</td>
-                                                    </tr>
-                                                @endif
-
-                                                {{-- Total R --}}
-                                                @php
-                                                    // Menghitung Total R
-                                                    $totalR = (1 / 3) * array_sum($rValues);
-                                                @endphp
-
-                                                <tr>
-                                                    <td><strong>Total R</strong></td>
-                                                    <td><strong>{{ number_format($totalR, 6) }}</strong></td>
-                                                </tr>
 
                                             </tbody>
                                         </table>
