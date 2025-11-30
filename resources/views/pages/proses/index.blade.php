@@ -781,60 +781,167 @@
                                                 @php
                                                     $totalClusters = count($centroidSum); // Total cluster
                                                     $rValues = []; // Array to store R values
-                                                    $euclideanValues = [
-                                                        'C1-C2' => 43.72250882,
-                                                        'C1-C3' => 79.53497658,
-                                                        'C1-C4' => 81.55041383,
-                                                        'C1-C5' => 89.99652771,
-                                                        'C2-C3' => 59.12498297,
-                                                        'C2-C4' => 50.33178378,
-                                                        'C2-C5' => 70.16551464,
-                                                        'C3-C4' => 24.20917456,
-                                                        'C3-C5' => 11.9127033,
-                                                        'C4-C5' => 29.2613749,
-                                                    ]; // Jarak Euclidean yang telah diberikan
                                                 @endphp
 
-                                                @for ($i = 0; $i < $totalClusters - 1; $i++)
+                                                {{-- Iterasi untuk menghitung R1, R2, ..., Rn --}}
+                                                @php
+                                                    // Pastikan $centroidSum asoc ['C1'=>..., 'C2'=>..., ...]
+                                                    $totalClusters = count($centroidSum);
+                                                    $rValues = [];
+
+                                                    // 1) Build lookup map dari $dbiPerCentroid yang kamu punya
+                                                    // Expect $dbiPerCentroid is an array of rows like: ['pair'=>'C1-C2','euclidean'=>43.72] (but could have spaces/dashes)
+                                                    $distanceMap = [];
+
+                                                    if (!empty($dbiPerCentroid) && is_array($dbiPerCentroid)) {
+                                                        foreach ($dbiPerCentroid as $row) {
+                                                            if (empty($row['pair'])) {
+                                                                continue;
+                                                            }
+                                                            // Normalisasi key: hapus spasi, ubah en-dash/longdash ke hyphen, uppercase
+                                                            $k = str_replace(
+                                                                ['–', '—', ' '],
+                                                                ['-', '-', ''],
+                                                                strtoupper($row['pair']),
+                                                            );
+                                                            $k = str_replace(['--'], ['-'], $k);
+                                                            $distanceMap[$k] = isset($row['euclidean'])
+                                                                ? (float) $row['euclidean']
+                                                                : (float) ($row['distance'] ?? 0);
+                                                        }
+                                                    }
+
+                                                    // optionally if you have dbiMatrix (assoc), merge into distanceMap
+                                                    if (!empty($dbiMatrix) && is_array($dbiMatrix)) {
+                                                        foreach ($dbiMatrix as $a => $cols) {
+                                                            foreach ($cols as $b => $val) {
+                                                                $key = strtoupper($a . '-' . $b);
+                                                                $distanceMap[$key] = (float) $val;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Helper to get distance robustly
+                                                    $getDistance = function ($a, $b) use ($distanceMap) {
+                                                        $pair1 = strtoupper($a . '-' . $b);
+                                                        $pair2 = strtoupper($b . '-' . $a);
+                                                        if (isset($distanceMap[$pair1])) {
+                                                            return $distanceMap[$pair1];
+                                                        }
+                                                        if (isset($distanceMap[$pair2])) {
+                                                            return $distanceMap[$pair2];
+                                                        }
+                                                        // not found
+                                                        return null;
+                                                    };
+                                                @endphp
+
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Pair</th>
+                                                            <th>SSW A</th>
+                                                            <th>SSW B</th>
+                                                            <th>Distance</th>
+                                                            <th>R</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @for ($i = 1; $i < $totalClusters; $i++)
+                                                            @php
+                                                                $a = 'C' . $i;
+                                                                $b = 'C' . ($i + 1);
+                                                                $pairLabel = $a . '-' . $b;
+
+                                                                // ambil SSW (pastikan key ada)
+                                                                $ssw1 = isset($centroidSum[$a])
+                                                                    ? (float) $centroidSum[$a]
+                                                                    : null;
+                                                                $ssw2 = isset($centroidSum[$b])
+                                                                    ? (float) $centroidSum[$b]
+                                                                    : null;
+
+                                                                // dapatkan distance dari map
+                                                                $distance = $getDistance($a, $b);
+
+                                                                // handle error / not found
+                                                                if ($ssw1 === null || $ssw2 === null) {
+                                                                    $r = 'SSW NOT FOUND';
+                                                                } elseif ($distance === null) {
+                                                                    $r = 'DIST NOT FOUND';
+                                                                } elseif ($distance == 0) {
+                                                                    $r = 'DIST=0';
+                                                                } else {
+                                                                    $r = ($ssw1 + $ssw2) / $distance;
+                                                                    $rValues[] = $r;
+                                                                }
+                                                            @endphp
+
+                                                            <tr>
+                                                                <td>{{ $pairLabel }}</td>
+                                                                <td class="text-end">
+                                                                    @if (is_numeric($ssw1))
+                                                                        {{ number_format($ssw1, 6) }}
+                                                                    @else
+                                                                        <span
+                                                                            class="text-danger">{{ $ssw1 }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    @if (is_numeric($ssw2))
+                                                                        {{ number_format($ssw2, 6) }}
+                                                                    @else
+                                                                        <span
+                                                                            class="text-danger">{{ $ssw2 }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    @if (is_numeric($distance))
+                                                                        {{ number_format($distance, 8) }}
+                                                                    @else
+                                                                        <span
+                                                                            class="text-warning">{{ $distance }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    @if (is_numeric($r))
+                                                                        {{ number_format($r, 6) }}
+                                                                    @else
+                                                                        <span
+                                                                            class="text-danger">{{ $r }}</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endfor
+                                                    </tbody>
+                                                </table>
+
+                                                {{-- Optional: tampilkan ringkasan --}}
+                                                <div class="mt-2">
+                                                    <strong>Total R values computed:</strong> {{ count($rValues) }}
+                                                </div>
+
+                                                {{-- R terakhir dihitung dengan rumus (SSW terakhir + SSW pertama) / Jarak Euclidean antara C terakhir dan C pertama --}}
+                                                @if ($totalClusters > 1)
                                                     @php
-                                                        // Menghitung R untuk setiap cluster
-                                                        $cluster1 = 'C' . ($i + 1);
-                                                        $cluster2 = 'C' . ($i + 2);
-                                                        $ssw1 = $centroidSum[$cluster1];
-                                                        $ssw2 = $centroidSum[$cluster2];
-                                                        $pair = 'C' . ($i + 1) . '-C' . ($i + 2); // Pasangan centroid
-                                                        $distance = $euclideanValues[$pair]; // Jarak Euclidean yang sesuai
+                                                        // Mengambil pasangan terakhir, misalnya C4 jika ada 4 cluster
+                                                        $sswLast = $centroidSum['C' . $totalClusters];
+                                                        $sswFirst = $centroidSum['C1'];
 
-                                                        // Rumus R (untuk cluster 1 sampai R4)
-                                                        $r = ($ssw1 + $ssw2) / $distance;
+                                                        // Ambil Jarak Euclidean antara C terakhir dan C pertama
+                                                        $lastPair = 'C' . $totalClusters . '-C1'; // Pasangan centroid terakhir
+                                                        $lastEuclidean =
+                                                            $dbiPerCentroid[$totalClusters - 2]['euclidean'] ?? 0.1; // Jarak Euclidean terakhir
 
-                                                        // Simpan nilai R ke array
-                                                        $rValues[] = $r;
-                                                    @endphp
+                                                        // Rumus R untuk pasangan terakhir
+                                                        $rLast = ($sswLast + $sswFirst) / $lastEuclidean;
 
-                                                    <tr>
-                                                        <td>R{{ $i + 1 }}</td>
-                                                        <td>{{ number_format($r, 6) }}</td>
-                                                    </tr>
-                                                @endfor
-
-                                                {{-- R5 dihitung dengan rumus (SSW 5 + SSW 1) / Jarak Euclidean dari C1-C5 --}}
-                                                @if ($totalClusters >= 5)
-                                                    @php
-                                                        // R5 = (SSW5 + SSW1) / Jarak Euclidean dari C1-C5
-                                                        $ssw5 = $centroidSum['C5'];
-                                                        $ssw1 = $centroidSum['C1'];
-                                                        $distanceC1C5 = $euclideanValues['C1-C5']; // Jarak Euclidean dari C1-C5
-
-                                                        // Rumus R5
-                                                        $r5 = ($ssw5 + $ssw1) / $distanceC1C5;
-
-                                                        // Simpan nilai R5 ke array
-                                                        $rValues[] = $r5;
+                                                        // Simpan nilai R terakhir ke array
+                                                        $rValues[] = $rLast;
                                                     @endphp
                                                     <tr>
-                                                        <td>R5</td>
-                                                        <td>{{ number_format($r5, 6) }}</td>
+                                                        <td>R{{ $totalClusters }}</td> {{-- Menampilkan R terakhir, sesuai jumlah cluster --}}
+                                                        <td>{{ number_format($rLast, 6) }}</td>
                                                     </tr>
                                                 @endif
 
@@ -844,29 +951,13 @@
                                                     $totalR = (1 / 3) * array_sum($rValues);
                                                 @endphp
 
-                                                {{-- <tr>
+                                                <tr>
                                                     <td><strong>Total R</strong></td>
                                                     <td><strong>{{ number_format($totalR, 6) }}</strong></td>
-                                                </tr> --}}
+                                                </tr>
 
                                             </tbody>
-
                                         </table>
-                                        <div class="mt-3">
-                                            <div
-                                                class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
-                                                <div>
-                                                    {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
-                                                    <div class="font-weight-semibold mr-2">
-                                                        Total R :
-                                                    </div>
-                                                </div>
-
-                                                <span class="badge badge-primary">
-                                                    {{ number_format($totalR, 6) }}
-                                                </span>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
