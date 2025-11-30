@@ -871,7 +871,7 @@
                                                             @endphp
 
                                                             <tr>
-                                                                <td>R{{ $i }} ({{ $pairLabel }})</td>
+                                                                <td>R{{ $i }} </td>
                                                                 <td class="text-end">
                                                                     {{ is_numeric($r) ? number_format($r, 6) : $r }}</td>
                                                             </tr>
@@ -903,7 +903,7 @@
                                                         @endphp
 
                                                         <tr>
-                                                            <td>R{{ $totalClusters }} ({{ $pairLabel }})</td>
+                                                            <td>R{{ $totalClusters }}</td>
                                                             <td class="text-end">
                                                                 {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
                                                             </td>
