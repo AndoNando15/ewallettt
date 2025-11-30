@@ -15,10 +15,10 @@
                 <button class="btn btn-info mb-3" data-toggle="modal" data-target="#importModal">Import Dataset</button>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th>No</th>
                                 <th>Nama Platform E-Wallet</th>
                                 <th>VTP</th>
                                 <th>NTP</th>
@@ -116,7 +116,7 @@
 
             // Initialize the DataTable with the additional option for 5 entries
             $('#dataTable').DataTable({
-                "pageLength": 5, // Default number of rows per page
+                "pageLength": 15, // Default number of rows per page
                 "lengthMenu": [5, 10, 25, 50, 100] // Options for rows per page
             });
         });

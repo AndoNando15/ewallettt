@@ -113,35 +113,43 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>ID</th>
-                                    <th>Nama Platform E-Wallet</th>
-                                    <th>VTP</th>
-                                    <th>NTP</th>
-                                    <th>PPE</th>
-                                    <th>FPE</th>
-                                    <th>PSD</th>
-                                    <th>IPE</th>
-                                    <th>PKP</th>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">ID</th>
+
+                                    {{-- Header Nama Platform E-Wallet tetap rata kiri --}}
+                                    <th class="text-start">Nama Platform E-Wallet</th>
+
+                                    <th class="text-center">VTP</th>
+                                    <th class="text-center">NTP</th>
+                                    <th class="text-center">PPE</th>
+                                    <th class="text-center">FPE</th>
+                                    <th class="text-center">PSD</th>
+                                    <th class="text-center">IPE</th>
+                                    <th class="text-center">PKP</th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 @foreach ($selectedDatasets as $row)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $row->id }}</td>
-                                        <td>{{ $row->nama_platform_e_wallet }}</td>
-                                        <td>{{ $row->VTP }}</td>
-                                        <td>{{ $row->NTP }}</td>
-                                        <td>{{ $row->PPE }}</td>
-                                        <td>{{ $row->FPE }}</td>
-                                        <td>{{ $row->PSD }}</td>
-                                        <td>{{ $row->IPE }}</td>
-                                        <td>{{ $row->PKP }}</td>
+                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                        <td class="text-center">{{ $row->id }}</td>
+
+                                        {{-- Isi tetap rata kiri --}}
+                                        <td class="text-start">{{ $row->nama_platform_e_wallet }}</td>
+
+                                        <td class="text-center">{{ $row->VTP }}</td>
+                                        <td class="text-center">{{ $row->NTP }}</td>
+                                        <td class="text-center">{{ $row->PPE }}</td>
+                                        <td class="text-center">{{ $row->FPE }}</td>
+                                        <td class="text-center">{{ $row->PSD }}</td>
+                                        <td class="text-center">{{ $row->IPE }}</td>
+                                        <td class="text-center">{{ $row->PKP }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
+
                     </div>
                 @endif
 
@@ -163,58 +171,53 @@
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
-                                            <th>No</th>
+                                            <th class="text-center">No</th>
                                             {{-- <th>ID</th> --}}
-                                            <th>Nama Platform E-Wallet</th>
+
+                                            {{-- Header Nama Platform tetap kiri --}}
+                                            <th class="text-start">Nama Platform E-Wallet</th>
+
                                             @for ($i = 1; $i <= $selectedCluster; $i++)
-                                                <th>Jarak ke C{{ $i }}</th>
+                                                <th class="text-center">Jarak ke C{{ $i }}</th>
                                             @endfor
-                                            <th>Jarak Terdekat</th>
-                                            <th>Cluster Terdekat</th>
-                                            <th>Perubahan</th>
-                                            <th>Jarak Terdekat ^2</th>
+
+                                            <th class="text-center">Jarak Terdekat</th>
+                                            <th class="text-center">Cluster Terdekat</th>
+                                            <th class="text-center">Perubahan</th>
+                                            <th class="text-center">Jarak Terdekat ^2</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
                                         @foreach ($allDistancesPerIteration[$iterationIndex] as $i => $row)
                                             <tr>
-                                                <td>{{ $i + 1 }}</td>
-                                                {{-- <td>{{ $row['dataset']->id }}</td> --}}
-                                                <td>{{ $row['dataset']->nama_platform_e_wallet }}</td>
+                                                <td class="text-center">{{ $i + 1 }}</td>
+
+                                                {{-- Isi Nama Platform E-Wallet tetap kiri --}}
+                                                <td class="text-start">{{ $row['dataset']->nama_platform_e_wallet }}</td>
+
                                                 @foreach ($row['distances'] as $d)
-                                                    <td>{{ number_format($d, 4) }}</td>
+                                                    <td class="text-center">{{ number_format($d, 4) }}</td>
                                                 @endforeach
-                                                <td>{{ number_format($row['dmin'], 4) }}</td>
-                                                <td>
+
+                                                <td class="text-center">{{ number_format($row['dmin'], 4) }}</td>
+
+                                                <td class="text-center">
                                                     @php
-                                                        $color = 'primary'; // default
-
-                                                        switch ($row['nearest']) {
-                                                            case 1:
-                                                                $color = 'primary'; // biru
-                                                                break;
-                                                            case 2:
-                                                                $color = 'warning'; // kuning
-                                                                break;
-                                                            case 3:
-                                                                $color = 'success'; // hijau
-                                                                break;
-                                                            case 4:
-                                                                $color = 'danger'; // merah
-                                                                break;
-                                                            case 5:
-                                                                $color = 'info'; // biru muda
-                                                                break;
-                                                            default:
-                                                                $color = 'secondary'; // abu-abu
-                                                                break;
-                                                        }
+                                                        $color = match ($row['nearest']) {
+                                                            1 => 'primary',
+                                                            2 => 'warning',
+                                                            3 => 'success',
+                                                            4 => 'danger',
+                                                            5 => 'info',
+                                                            default => 'secondary',
+                                                        };
                                                     @endphp
-
                                                     <span
                                                         class="badge badge-{{ $color }}">C{{ $row['nearest'] }}</span>
                                                 </td>
-                                                <td>
+
+                                                <td class="text-center">
                                                     @if ($row['changed'] === 'Iya')
                                                         <span class="badge badge-danger">Iya</span>
                                                     @else
@@ -222,7 +225,7 @@
                                                     @endif
                                                 </td>
 
-                                                <td>{{ number_format($row['dminSquared'], 4) }}</td>
+                                                <td class="text-center">{{ number_format($row['dminSquared'], 4) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -236,14 +239,14 @@
                                 <table class="table table-bordered">
                                     <thead>
                                         <tr>
-                                            <th>Cluster</th>
+                                            <th class="text-center">Cluster</th>
                                             <th>Nama Platform E-Wallet</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($allClusterResultsPerIteration[$iterationIndex] as $result)
                                             <tr>
-                                                <td>
+                                                <td class="text-center">
                                                     @php
                                                         $color = 'primary'; // default
 
@@ -281,7 +284,7 @@
 
                             {{-- Tabel Hasil Iterasi --}}
                             <h6 class="font-weight-bold mt-4">Centroid baru</h6>
-                            <table class="table table-bordered">
+                            <table class="table table-bordered text-center">
                                 <thead>
                                     <tr>
                                         <th>Cluster</th>
@@ -353,13 +356,21 @@
                     @endforeach
                 @endif
 
-                {{-- Total SSE --}}
-                @if (isset($sseTotal))
-                    <div class="mt-4">
-                        <h5 class="mb-3">Total SSE (Sum of Squared Errors)</h5>
-                        <p>SSE Total: <strong>{{ number_format($sseTotal, 4) }}</strong></p>
+                {{-- 
+                <div class="mt-3">
+                    <div class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
+                        <div>
+                       
+                            <div class="font-weight-semibold mr-2">
+                                <Strong> Total SSE (Sum of Squared Errors) :</Strong>
+                            </div>
+                        </div>
+
+                        <span class="badge badge-primary">
+                            <strong>{{ number_format($sseTotal, 4) }}</strong>
+                        </span>
                     </div>
-                @endif
+                </div> --}}
 
 
                 {{-- Centroid akhir (konvergen) --}}
@@ -373,7 +384,7 @@
 
                                 <div class="card-body">
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-bordered align-middle mb-0">
+                                        <table class="table table-sm table-bordered text-center align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
                                                     <th style="width: 10%">Cluster</th>
@@ -470,7 +481,7 @@
                                             <table class="table table-sm table-bordered align-middle">
                                                 <thead class="table-light">
                                                     <tr>
-                                                        <th>No</th>
+                                                        <th class=" text-center">No</th>
                                                         <th>E-Wallet</th>
                                                     </tr>
                                                 </thead>
@@ -482,7 +493,8 @@
                                                         {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
                                                         @foreach (explode(',', $platforms) as $platform)
                                                             <tr>
-                                                                <td>{{ $loop->iteration }}</td> {{-- Menampilkan nomor urut yang benar --}}
+                                                                <td class=" text-center">{{ $loop->iteration }}</td>
+                                                                {{-- Menampilkan nomor urut yang benar --}}
                                                                 <td>{{ trim($platform) }}</td> {{-- Menampilkan nama platform setelah di-trim --}}
                                                             </tr>
                                                         @endforeach
@@ -514,14 +526,14 @@
                                         <table class="table table-sm table-bordered align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width: 30%">Centroid</th>
+                                                    <th class=" text-center" style="width: 30%">Centroid</th>
                                                     <th>Rata-rata</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach ($centroidAverages as $clusterName => $average)
                                                     <tr>
-                                                        <td>
+                                                        <td class=" text-center">
                                                             @php
                                                                 // Ambil nomor cluster, misal "C3" → 3
                                                                 preg_match('/C(\d+)/', $clusterName, $matches);
@@ -579,15 +591,15 @@
                                         <table class="table table-sm table-bordered align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width: 40%">Iterasi</th>
-                                                    <th>SSE</th>
+                                                    <th class=" text-center" style="width: 40%">Iterasi</th>
+                                                    <th class=" text-center">SSE</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach ($allSSEPerIteration as $iterationIndex => $sse)
                                                     <tr>
-                                                        <td>Iterasi {{ $iterationIndex + 1 }}</td>
-                                                        <td>{{ number_format($sse, 4) }}</td>
+                                                        <td class=" text-center">Iterasi {{ $iterationIndex + 1 }}</td>
+                                                        <td class=" text-center">{{ number_format($sse, 4) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -601,7 +613,7 @@
                                             <div>
                                                 {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
                                                 <div class="font-weight-semibold mr-2">
-                                                    SSE Per Iterasi :
+                                                    Total SSE :
                                                 </div>
                                             </div>
 
@@ -631,14 +643,14 @@
                                         <table class="table table-sm table-bordered align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width: 30%">Cluster</th>
-                                                    <th>Nilai</th>
+                                                    <th class=" text-center" style="width: 30%">Cluster</th>
+                                                    <th class=" text-center">Nilai</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach ($centroidSum as $clusterName => $sum)
                                                     <tr>
-                                                        <td>
+                                                        <td class=" text-center">
                                                             @php
                                                                 // Ambil nomor cluster dari nama cluster, misal "C2" → 2
                                                                 preg_match('/C(\d+)/', $clusterName, $matches);
@@ -672,7 +684,7 @@
 
                                                             <span
                                                                 class="badge badge-{{ $color }}">{{ $clusterName }}</span>
-                                                        </td>
+                                                        </td class=" text-center">
                                                         <td>{{ number_format($sum, 4) }}</td>
                                                     </tr>
                                                 @endforeach
@@ -697,14 +709,14 @@
                                         <table class="table table-sm table-bordered text-center align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width: 30%">Pasangan Centroid</th>
-                                                    <th>Jarak Euclidean</th>
+                                                    <th class=" text-center" style="width: 30%">Pasangan Centroid</th>
+                                                    <th class=" text-center">Jarak Euclidean</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach ($dbiPerCentroid as $row)
                                                     <tr>
-                                                        <td>
+                                                        <td class=" text-center">
                                                             @php
                                                                 // Ambil cluster pertama dari pair, misal "C1 - C2" → 1
                                                                 preg_match('/C(\d+)/', $row['pair'], $matches);
@@ -739,7 +751,8 @@
                                                             <span
                                                                 class="badge badge-{{ $color }}">{{ $row['pair'] }}</span>
                                                         </td>
-                                                        <td>{{ number_format($row['euclidean'], 4, ',', '.') }}</td>
+                                                        <td class=" text-center">
+                                                            {{ number_format($row['euclidean'], 4, ',', '.') }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -769,7 +782,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
-                                        <table class="table table-sm table-bordered text-center align-middle mb-0">
+                                        <table class="table table-sm text-center table-bordered align-middle mb-0">
 
                                             <tbody>
                                                 @php
@@ -830,7 +843,7 @@
                                                     };
                                                 @endphp
 
-                                                <table class="table table-bordered">
+                                                <table class="table text-center table-bordered">
                                                     <thead class="table-light">
                                                         <tr>
                                                             <th style="width: 30%">Centorid</th>
@@ -871,7 +884,22 @@
                                                             @endphp
 
                                                             <tr>
-                                                                <td>R{{ $i }} </td>
+                                                                <td class="text-center">
+                                                                    @php
+                                                                        $color = match ($i) {
+                                                                            1 => 'primary', // biru
+                                                                            2 => 'warning', // kuning
+                                                                            3 => 'success', // hijau
+                                                                            4 => 'danger', // merah
+                                                                            5 => 'info', // biru muda
+                                                                            default => 'secondary', // abu-abu
+                                                                        };
+                                                                    @endphp
+
+                                                                    <span
+                                                                        class="badge badge-{{ $color }}">R{{ $i }}</span>
+                                                                </td>
+
                                                                 <td class="text-end">
                                                                     {{ is_numeric($r) ? number_format($r, 6) : $r }}</td>
                                                             </tr>
@@ -903,7 +931,21 @@
                                                         @endphp
 
                                                         <tr>
-                                                            <td>R{{ $totalClusters }}</td>
+                                                            <td class="text-end">
+                                                                @php
+                                                                    $color = match ($totalClusters) {
+                                                                        1 => 'primary', // biru
+                                                                        2 => 'warning', // kuning
+                                                                        3 => 'success', // hijau
+                                                                        4 => 'danger', // merah
+                                                                        5 => 'info', // biru muda
+                                                                        default => 'secondary',
+                                                                    };
+                                                                @endphp
+
+                                                                <span
+                                                                    class="badge badge-{{ $color }}">R{{ $totalClusters }}</span>
+                                                            </td>
                                                             <td class="text-end">
                                                                 {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
                                                             </td>
