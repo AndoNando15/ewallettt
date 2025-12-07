@@ -116,7 +116,7 @@
 
             // Initialize the DataTable with the additional option for 5 entries
             $('#dataTable').DataTable({
-                "pageLength": 15, // Default number of rows per page
+                "pageLength": 5, // Default number of rows per page
                 "lengthMenu": [5, 10, 25, 50, 100] // Options for rows per page
             });
         });
