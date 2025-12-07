@@ -803,215 +803,92 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="table-responsive">
-                                                <table class="table table-sm text-center table-bordered align-middle mb-0">
 
+                                                @php
+                                                    $totalClusters = count($centroidSum);
+                                                    $rValues = [];
+                                                    $distanceMap = [];
+
+                                                    // Normalisasi pasangan jarak
+                                                    foreach ($dbiPerCentroid as $row) {
+                                                        if (empty($row['pair'])) {
+                                                            continue;
+                                                        }
+                                                        $key = strtoupper(
+                                                            str_replace(['–', '—', ' '], ['-', '-', ''], $row['pair']),
+                                                        );
+                                                        $distanceMap[$key] = (float) $row['euclidean'];
+                                                    }
+
+                                                    $getDistance = function ($a, $b) use ($distanceMap) {
+                                                        $p1 = strtoupper("$a-$b");
+                                                        $p2 = strtoupper("$b-$a");
+                                                        return $distanceMap[$p1] ?? ($distanceMap[$p2] ?? null);
+                                                    };
+                                                @endphp
+
+                                                <table class="table table-bordered text-center">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Centroid</th>
+                                                            <th>Nilai R</th>
+                                                        </tr>
+                                                    </thead>
                                                     <tbody>
-                                                        @php
-                                                            $totalClusters = count($centroidSum); // Total cluster
-                                                            $rValues = []; // Array to store R values
-                                                        @endphp
 
-                                                        {{-- Iterasi untuk menghitung R1, R2, ..., Rn --}}
-                                                        @php
-                                                            // Pastikan $centroidSum asoc ['C1'=>..., 'C2'=>..., ...]
-                                                            $totalClusters = count($centroidSum);
-                                                            $rValues = [];
+                                                        @foreach ($centroidSum as $c => $ssw)
+                                                            @php
+                                                                $denominator = 0;
 
-                                                            // 1) Build lookup map dari $dbiPerCentroid yang kamu punya
-                                                            // Expect $dbiPerCentroid is an array of rows like: ['pair'=>'C1-C2','euclidean'=>43.72] (but could have spaces/dashes)
-                                                            $distanceMap = [];
-
-                                                            if (!empty($dbiPerCentroid) && is_array($dbiPerCentroid)) {
-                                                                foreach ($dbiPerCentroid as $row) {
-                                                                    if (empty($row['pair'])) {
-                                                                        continue;
-                                                                    }
-                                                                    // Normalisasi key: hapus spasi, ubah en-dash/longdash ke hyphen, uppercase
-                                                                    $k = str_replace(
-                                                                        ['–', '—', ' '],
-                                                                        ['-', '-', ''],
-                                                                        strtoupper($row['pair']),
-                                                                    );
-                                                                    $k = str_replace(['--'], ['-'], $k);
-                                                                    $distanceMap[$k] = isset($row['euclidean'])
-                                                                        ? (float) $row['euclidean']
-                                                                        : (float) ($row['distance'] ?? 0);
-                                                                }
-                                                            }
-
-                                                            // optionally if you have dbiMatrix (assoc), merge into distanceMap
-                                                            if (!empty($dbiMatrix) && is_array($dbiMatrix)) {
-                                                                foreach ($dbiMatrix as $a => $cols) {
-                                                                    foreach ($cols as $b => $val) {
-                                                                        $key = strtoupper($a . '-' . $b);
-                                                                        $distanceMap[$key] = (float) $val;
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            // Helper to get distance robustly
-                                                            $getDistance = function ($a, $b) use ($distanceMap) {
-                                                                $pair1 = strtoupper($a . '-' . $b);
-                                                                $pair2 = strtoupper($b . '-' . $a);
-                                                                if (isset($distanceMap[$pair1])) {
-                                                                    return $distanceMap[$pair1];
-                                                                }
-                                                                if (isset($distanceMap[$pair2])) {
-                                                                    return $distanceMap[$pair2];
-                                                                }
-                                                                // not found
-                                                                return null;
-                                                            };
-                                                        @endphp
-
-                                                        <table class="table text-center table-bordered">
-                                                            <thead class="table-light">
-                                                                <tr>
-                                                                    <th style="width: 30%">Centorid</th>
-                                                                    <th>Nilai R</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-
-                                                                @php
-                                                                    $rValues = [];
-                                                                @endphp
-
-                                                                {{-- R1 sampai R(n-1) --}}
-                                                                @for ($i = 1; $i < $totalClusters; $i++)
-                                                                    @php
-                                                                        $a = "C{$i}";
-                                                                        $b = 'C' . ($i + 1);
-                                                                        $pairLabel = "{$a}-{$b}";
-
-                                                                        // Ambil SSW
-                                                                        $ssw1 = $centroidSum[$a] ?? null;
-                                                                        $ssw2 = $centroidSum[$b] ?? null;
-
-                                                                        // Ambil distance dengan closure (menjamin ambil pasangan urut)
-                                                                        $distance = $getDistance($a, $b);
-
-                                                                        // Hitung R atau error message
-                                                                        if ($ssw1 === null || $ssw2 === null) {
-                                                                            $r = 'SSW NOT FOUND';
-                                                                        } elseif ($distance === null) {
-                                                                            $r = 'DIST NOT FOUND';
-                                                                        } elseif ($distance == 0) {
-                                                                            $r = 'DIST=0';
-                                                                        } else {
-                                                                            $r = ($ssw1 + $ssw2) / $distance;
-                                                                            $rValues[] = $r;
+                                                                foreach ($centroidSum as $c2 => $ssw2) {
+                                                                    if ($c !== $c2) {
+                                                                        $dist = $getDistance($c, $c2);
+                                                                        if ($dist !== null && $dist > 0) {
+                                                                            $denominator += $dist;
                                                                         }
-                                                                    @endphp
-
-                                                                    <tr>
-                                                                        <td class="text-center">
-                                                                            @php
-                                                                                $color = match ($i) {
-                                                                                    1 => 'primary', // biru
-                                                                                    2 => 'warning', // kuning
-                                                                                    3 => 'success', // hijau
-                                                                                    4 => 'danger', // merah
-                                                                                    5 => 'info', // biru muda
-                                                                                    default => 'secondary', // abu-abu
-                                                                                };
-                                                                            @endphp
-
-                                                                            <span
-                                                                                class="badge badge-{{ $color }}">R{{ $i }}</span>
-                                                                        </td>
-
-                                                                        <td class="text-end">
-                                                                            {{ is_numeric($r) ? number_format($r, 6) : $r }}
-                                                                        </td>
-                                                                    </tr>
-                                                                @endfor
-
-
-                                                                {{-- R terakhir: Cn - C1 --}}
-                                                                @php
-                                                                    $a = "C{$totalClusters}";
-                                                                    $b = 'C1';
-                                                                    $pairLabel = "{$a}-{$b}";
-
-                                                                    $sswLast = $centroidSum[$a] ?? null;
-                                                                    $sswFirst = $centroidSum[$b] ?? null;
-
-                                                                    // Ambil distance (closure akan otomatis sort → C1-C5)
-                                                                    $distanceLast = $getDistance($a, $b);
-
-                                                                    if ($sswLast === null || $sswFirst === null) {
-                                                                        $rLast = 'SSW NOT FOUND';
-                                                                    } elseif ($distanceLast === null) {
-                                                                        $rLast = 'DIST NOT FOUND';
-                                                                    } elseif ($distanceLast == 0) {
-                                                                        $rLast = 'DIST=0';
-                                                                    } else {
-                                                                        $rLast = ($sswLast + $sswFirst) / $distanceLast;
-                                                                        $rValues[] = $rLast;
                                                                     }
-                                                                @endphp
+                                                                }
 
-                                                                <tr>
-                                                                    <td class="text-end">
-                                                                        @php
-                                                                            $color = match ($totalClusters) {
-                                                                                1 => 'primary', // biru
-                                                                                2 => 'warning', // kuning
-                                                                                3 => 'success', // hijau
-                                                                                4 => 'danger', // merah
-                                                                                5 => 'info', // biru muda
-                                                                                default => 'secondary',
-                                                                            };
-                                                                        @endphp
+                                                                if ($denominator > 0) {
+                                                                    $r = $ssw / $denominator;
+                                                                    $rValues[] = $r;
+                                                                } else {
+                                                                    $r = 'N/A';
+                                                                }
+                                                            @endphp
 
-                                                                        <span
-                                                                            class="badge badge-{{ $color }}">R{{ $totalClusters }}</span>
-                                                                    </td>
-                                                                    <td class="text-end">
-                                                                        {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
-                                                                    </td>
-                                                                </tr>
+                                                            <tr>
+                                                                <td>{{ $c }}</td>
+                                                                <td class="text-end">
+                                                                    {{ is_numeric($r) ? number_format($r, 9) : $r }}</td>
+                                                            </tr>
+                                                        @endforeach
 
-
-                                                                {{-- Total R --}}
-                                                                @php
-                                                                    $totalR =
-                                                                        (1 / $totalClusters) * array_sum($rValues);
-                                                                @endphp
-
-
-                                                                {{-- <tr class="fw-bold">
-                                                            <td>Total R</td>
-                                                            <td class="text-end">{{ number_format($totalR, 6) }}</td>
-                                                        </tr> --}}
-
-                                                            </tbody>
-                                                        </table>
-                                                        <div class="mt-3">
-                                                            <div
-                                                                class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
-                                                                <div>
-                                                                    {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
-                                                                    <div class="font-weight-semibold mr-2">
-                                                                        Total R :
-                                                                    </div>
-                                                                </div>
-
-                                                                <span class="badge badge-primary">
-                                                                    {{ number_format($totalR, 6) }}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
+                                                        @php
+                                                            $totalR =
+                                                                count($rValues) > 0
+                                                                    ? array_sum($rValues) / count($rValues)
+                                                                    : 0;
+                                                        @endphp
 
                                                     </tbody>
                                                 </table>
+
+                                                <div class="mt-3">
+                                                    <div class="p-2 border rounded bg-light d-inline-block">
+                                                        <span class="font-weight-semibold">Total R (DBI):</span>
+                                                        <span class="badge badge-primary">
+                                                            {{ number_format($totalR, 9) }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             @endif
+
 
 
 
