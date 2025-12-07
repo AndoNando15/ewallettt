@@ -371,171 +371,167 @@
                         </span>
                     </div>
                 </div> --}}
-
-                {{-- =======================
-    SECTION: METRIK CLUSTERING
-=========================== --}}
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Hasil Akhir</h4>
-                    </div>
-
-                    <div class="card-body">
-                        {{-- Centroid akhir (konvergen) --}}
-                        @if (!empty($newCentroids))
-                            <div class="row mt-2">
-                                <div class="col-12">
-                                    <div class="card shadow-sm">
-                                        <div class="card-header">
-                                            <h5 class="mb-0">Centroid Akhir (Konvergen)</h5>
-                                        </div>
-
-                                        <div class="card-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-bordered text-center align-middle mb-0">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th style="width: 10%">Cluster</th>
-                                                            @foreach ($features as $feature)
-                                                                <th>{{ $feature }}</th>
-                                                            @endforeach
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($newCentroids as $index => $centroid)
-                                                            <tr>
-                                                                <td>
-                                                                    @php
-                                                                        $clusterNum = $index + 1;
-                                                                        $color = 'primary'; // default
-
-                                                                        switch ($clusterNum) {
-                                                                            case 1:
-                                                                                $color = 'primary'; // biru
-                                                                                break;
-                                                                            case 2:
-                                                                                $color = 'warning'; // kuning
-                                                                                break;
-                                                                            case 3:
-                                                                                $color = 'success'; // hijau
-                                                                                break;
-                                                                            case 4:
-                                                                                $color = 'danger'; // merah
-                                                                                break;
-                                                                            case 5:
-                                                                                $color = 'info'; // biru muda
-                                                                                break;
-                                                                            default:
-                                                                                $color = 'secondary'; // abu-abu
-                                                                                break;
-                                                                        }
-                                                                    @endphp
-
-                                                                    <span
-                                                                        class="badge badge-{{ $color }}">C{{ $clusterNum }}</span>
-                                                                </td>
-
-                                                                @foreach ($features as $f)
-                                                                    <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
-                                                                @endforeach
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div> {{-- /.table-responsive --}}
-                                        </div> {{-- /.card-body --}}
-                                    </div> {{-- /.card --}}
-                                </div> {{-- /.col --}}
-                            </div> {{-- /.row --}}
-                        @endif
-
-                        {{-- Menetapkan data ke kelas terdekat --}}
-                        @if (!empty($newCentroids))
-                            <div class="row mt-4">
-                                @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
-                                    <div class="col-md-4 mb-4"> {{-- 2 kolom per baris pada layar medium ke atas --}}
+                @if (!empty($newCentroids))
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Metrik Clustering</h4>
+                        </div>
+                        <div class="m-4">
+                            {{-- Centroid akhir (konvergen) --}}
+                            @if (!empty($newCentroids))
+                                <div class="row">
+                                    <div class="col-12">
                                         <div class="card shadow-sm">
                                             <div class="card-header">
-                                                <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
-                                                    @switch($clusterNumber + 1)
-                                                        @case(1)
-                                                            Sering Digunakan
-                                                        @break
-
-                                                        @case(2)
-                                                            Cukup Sering Digunakan
-                                                        @break
-
-                                                        @case(3)
-                                                            Jarang Digunakan
-                                                        @break
-
-                                                        @case(4)
-                                                            Sangat Jarang Digunakan
-                                                        @break
-
-                                                        @case(5)
-                                                            Hampir Tidak Pernah Digunakan
-                                                        @break
-
-                                                        @default
-                                                            Tidak Ada Data
-                                                    @endswitch
-                                                </h5>
+                                                <h5 class="mb-0">Centroid Akhir (Konvergen)</h5>
                                             </div>
 
                                             <div class="card-body">
                                                 <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered align-middle">
+                                                    <table
+                                                        class="table table-sm table-bordered text-center align-middle mb-0">
                                                         <thead class="table-light">
                                                             <tr>
-                                                                <th class=" text-center">No</th>
-                                                                <th>E-Wallet</th>
+                                                                <th style="width: 10%">Cluster</th>
+                                                                @foreach ($features as $feature)
+                                                                    <th>{{ $feature }}</th>
+                                                                @endforeach
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            @foreach ($result as $index => $platforms)
-                                                                @if ($loop->first)
-                                                                    @continue {{-- Skip iterasi pertama --}}
-                                                                @endif
-                                                                {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
-                                                                @foreach (explode(',', $platforms) as $platform)
-                                                                    <tr>
-                                                                        <td class=" text-center">{{ $loop->iteration }}
-                                                                        </td>
-                                                                        {{-- Menampilkan nomor urut yang benar --}}
-                                                                        <td>{{ trim($platform) }}</td>
-                                                                        {{-- Menampilkan nama platform setelah di-trim --}}
-                                                                    </tr>
-                                                                @endforeach
+                                                            @foreach ($newCentroids as $index => $centroid)
+                                                                <tr>
+                                                                    <td>
+                                                                        @php
+                                                                            $clusterNum = $index + 1;
+                                                                            $color = 'primary'; // default
+
+                                                                            switch ($clusterNum) {
+                                                                                case 1:
+                                                                                    $color = 'primary'; // biru
+                                                                                    break;
+                                                                                case 2:
+                                                                                    $color = 'warning'; // kuning
+                                                                                    break;
+                                                                                case 3:
+                                                                                    $color = 'success'; // hijau
+                                                                                    break;
+                                                                                case 4:
+                                                                                    $color = 'danger'; // merah
+                                                                                    break;
+                                                                                case 5:
+                                                                                    $color = 'info'; // biru muda
+                                                                                    break;
+                                                                                default:
+                                                                                    $color = 'secondary'; // abu-abu
+                                                                                    break;
+                                                                            }
+                                                                        @endphp
+
+                                                                        <span
+                                                                            class="badge badge-{{ $color }}">C{{ $clusterNum }}</span>
+                                                                    </td>
+
+                                                                    @foreach ($features as $f)
+                                                                        <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
+                                                                    @endforeach
+                                                                </tr>
                                                             @endforeach
                                                         </tbody>
                                                     </table>
                                                 </div> {{-- /.table-responsive --}}
                                             </div> {{-- /.card-body --}}
                                         </div> {{-- /.card --}}
-                                    </div> {{-- /.col-md-6 --}}
-                                @endforeach
-                            </div> {{-- /.row --}}
-                        @endif
+                                    </div> {{-- /.col --}}
+                                </div> {{-- /.row --}}
+                            @endif
 
-                    </div>
-                </div>
-                {{-- =======================
-    SECTION: METRIK CLUSTERING
-=========================== --}}
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Rata Rata</h4>
-                    </div>
+                            {{-- Menetapkan data ke kelas terdekat --}}
+                            @if (!empty($newCentroids))
+                                <div class="row mt-4">
+                                    @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
+                                        <div class="col-md-4 mb-2"> {{-- 2 kolom per baris pada layar medium ke atas --}}
+                                            <div class="card shadow-sm">
+                                                <div class="card-header">
+                                                    <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
+                                                        @switch($clusterNumber + 1)
+                                                            @case(1)
+                                                                Sering Digunakan
+                                                            @break
 
-                    <div class="card-body">
+                                                            @case(2)
+                                                                Cukup Sering Digunakan
+                                                            @break
+
+                                                            @case(3)
+                                                                Jarang Digunakan
+                                                            @break
+
+                                                            @case(4)
+                                                                Sangat Jarang Digunakan
+                                                            @break
+
+                                                            @case(5)
+                                                                Hampir Tidak Pernah Digunakan
+                                                            @break
+
+                                                            @default
+                                                                Tidak Ada Data
+                                                        @endswitch
+                                                    </h5>
+                                                </div>
+
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-bordered align-middle">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th class=" text-center">No</th>
+                                                                    <th>E-Wallet</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($result as $index => $platforms)
+                                                                    @if ($loop->first)
+                                                                        @continue {{-- Skip iterasi pertama --}}
+                                                                    @endif
+                                                                    {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
+                                                                    @foreach (explode(',', $platforms) as $platform)
+                                                                        <tr>
+                                                                            <td class=" text-center">
+                                                                                {{ $loop->iteration }}
+                                                                            </td>
+                                                                            {{-- Menampilkan nomor urut yang benar --}}
+                                                                            <td>{{ trim($platform) }}</td>
+                                                                            {{-- Menampilkan nama platform setelah di-trim --}}
+                                                                        </tr>
+                                                                    @endforeach
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div> {{-- /.table-responsive --}}
+                                                </div> {{-- /.card-body --}}
+                                            </div> {{-- /.card --}}
+                                        </div> {{-- /.col-md-6 --}}
+                                    @endforeach
+                                </div> {{-- /.row --}}
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+
+                @if (!empty($newCentroids))
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Metrik Clustering</h4>
+                        </div>
                         {{-- SECTION METRIK CLUSTERING --}}
-                        <div class="row mt-2">
+                        <div class="row m-2">
 
                             {{-- Rata-rata Centroid --}}
                             @if (!empty($centroidAverages))
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-6 mb-2 mt-3">
                                     <div class="card shadow-sm h-100">
                                         <div class="card-header">
                                             <h5 class="mb-0">Rata-rata Centroid</h5>
@@ -600,7 +596,7 @@
 
                             {{-- SSE per Iterasi + Total SSE --}}
                             @if (!empty($allSSEPerIteration))
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-6 mb-4 mt-3">
                                     <div class="card shadow-sm h-100">
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="mb-0">SSE per Iterasi</h5>
@@ -617,11 +613,9 @@
                                                     <tbody>
                                                         @foreach ($allSSEPerIteration as $iterationIndex => $sse)
                                                             <tr>
-                                                                <td class=" text-center">Iterasi
-                                                                    {{ $iterationIndex + 1 }}
+                                                                <td class=" text-center">Iterasi {{ $iterationIndex + 1 }}
                                                                 </td>
-                                                                <td class=" text-center">{{ number_format($sse, 4) }}
-                                                                </td>
+                                                                <td class=" text-center">{{ number_format($sse, 4) }}</td>
                                                             </tr>
                                                         @endforeach
                                                     </tbody>
@@ -649,13 +643,16 @@
                                 </div>
                             @endif
 
+
                         </div>
 
-                        <div class="row mt-2">
+
+
+                        <div class="row m-2">
 
                             {{-- SSW --}}
                             @if (!empty($centroidSum))
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-6 mb-2 mt-3">
                                     <div class="card shadow-sm h-100">
                                         <div class="card-header">
                                             <h5 class="mb-0">SSW per Cluster</h5>
@@ -721,7 +718,7 @@
                             {{-- DBI --}}
                             {{-- Tabel DBI --}}
                             @if (!empty($dbiPerCentroid))
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-6 mb-2 mt-3">
                                     <div class="card shadow-sm h-100">
                                         <div class="card-header">
                                             <h5 class="mb-0">Davies-Bouldin Index per Centroid</h5>
@@ -731,8 +728,7 @@
                                                 <table class="table table-sm table-bordered text-center align-middle mb-0">
                                                     <thead class="table-light">
                                                         <tr>
-                                                            <th class=" text-center" style="width: 30%">Pasangan
-                                                                Centroid
+                                                            <th class=" text-center" style="width: 30%">Pasangan Centroid
                                                             </th>
                                                             <th class=" text-center">Jarak Euclidean</th>
                                                         </tr>
@@ -788,8 +784,7 @@
                                             @isset($dbiTotal)
                                                 <div class="mt-3 text-end">
                                                     <h6 class="mb-0">
-                                                        <strong>Total DBI:</strong>
-                                                        {{ number_format($dbiTotal, 4, ',', '.') }}
+                                                        <strong>Total DBI:</strong> {{ number_format($dbiTotal, 4, ',', '.') }}
                                                     </h6>
                                                 </div>
                                             @endisset
@@ -801,7 +796,7 @@
 
                             {{-- Tabel R --}}
                             @if (!empty($centroidSum) && !empty($dbiPerCentroid))
-                                <div class="col-lg-6 mb-4">
+                                <div class="col-lg-6 mb-3 mt-3">
                                     <div class="card shadow-sm h-100">
                                         <div class="card-header">
                                             <h5 class="mb-0">Tabel Perhitungan R</h5>
@@ -1018,54 +1013,55 @@
                                 </div>
                             @endif
 
+
+
+
                         </div>
-
-
-
-
-
-
-
-
                     </div>
-                </div>
+                @endif
+
+
+
+
             </div>
-        @endsection
+        </div>
+    </div>
+@endsection
 
-        @push('script')
-            <script>
-                (function() {
-                    const clusterSelect = document.getElementById('cluster');
+@push('script')
+    <script>
+        (function() {
+            const clusterSelect = document.getElementById('cluster');
 
-                    function showBlock(k) {
-                        [2, 3, 4, 5].forEach(n => {
-                            const block = document.getElementById('block-' + n);
-                            if (!block) return;
-                            block.style.display = 'none';
-                            block.querySelectorAll('select').forEach(s => {
-                                s.disabled = true;
-                                s.value = '';
-                            });
-                        });
+            function showBlock(k) {
+                [2, 3, 4, 5].forEach(n => {
+                    const block = document.getElementById('block-' + n);
+                    if (!block) return;
+                    block.style.display = 'none';
+                    block.querySelectorAll('select').forEach(s => {
+                        s.disabled = true;
+                        s.value = '';
+                    });
+                });
 
-                        const active = document.getElementById('block-' + k);
-                        if (active) {
-                            active.style.display = 'block';
-                            active.querySelectorAll('select').forEach(s => {
-                                s.disabled = false;
-                            });
-                        }
-                    }
+                const active = document.getElementById('block-' + k);
+                if (active) {
+                    active.style.display = 'block';
+                    active.querySelectorAll('select').forEach(s => {
+                        s.disabled = false;
+                    });
+                }
+            }
 
-                    @if (!empty($selectedCluster))
-                        showBlock({{ $selectedCluster }});
-                    @endif
+            @if (!empty($selectedCluster))
+                showBlock({{ $selectedCluster }});
+            @endif
 
-                    if (clusterSelect) {
-                        clusterSelect.addEventListener('change', function() {
-                            if (this.value) showBlock(this.value);
-                        });
-                    }
-                })();
-            </script>
-        @endpush
+            if (clusterSelect) {
+                clusterSelect.addEventListener('change', function() {
+                    if (this.value) showBlock(this.value);
+                });
+            }
+        })();
+    </script>
+@endpush
