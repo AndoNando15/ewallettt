@@ -374,7 +374,7 @@
                 @if (!empty($newCentroids))
                     <div class="card shadow-sm mt-4">
                         <div class="card-header bg-primary text-white">
-                            <h4 class="mb-0">Metrik Clustering</h4>
+                            <h4 class="mb-0 text-center">Hasil Konvergen</h4>
                         </div>
                         <div class="m-4">
                             {{-- Centroid akhir (konvergen) --}}
@@ -524,7 +524,7 @@
                 @if (!empty($newCentroids))
                     <div class="card shadow-sm mt-4">
                         <div class="card-header bg-primary text-white">
-                            <h4 class="mb-0">Metrik Clustering</h4>
+                            <h4 class="mb-0 text-center">Hasil Rata-Rata</h4>
                         </div>
                         {{-- SECTION METRIK CLUSTERING --}}
                         <div class="row m-2">
