@@ -372,672 +372,700 @@
                     </div>
                 </div> --}}
 
+                {{-- =======================
+    SECTION: METRIK CLUSTERING
+=========================== --}}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Hasil Akhir</h4>
+                    </div>
 
-                {{-- Centroid akhir (konvergen) --}}
-                @if (!empty($newCentroids))
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="card shadow-sm">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Centroid Akhir (Konvergen)</h5>
-                                </div>
-
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered text-center align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th style="width: 10%">Cluster</th>
-                                                    @foreach ($features as $feature)
-                                                        <th>{{ $feature }}</th>
-                                                    @endforeach
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($newCentroids as $index => $centroid)
-                                                    <tr>
-                                                        <td>
-                                                            @php
-                                                                $clusterNum = $index + 1;
-                                                                $color = 'primary'; // default
-
-                                                                switch ($clusterNum) {
-                                                                    case 1:
-                                                                        $color = 'primary'; // biru
-                                                                        break;
-                                                                    case 2:
-                                                                        $color = 'warning'; // kuning
-                                                                        break;
-                                                                    case 3:
-                                                                        $color = 'success'; // hijau
-                                                                        break;
-                                                                    case 4:
-                                                                        $color = 'danger'; // merah
-                                                                        break;
-                                                                    case 5:
-                                                                        $color = 'info'; // biru muda
-                                                                        break;
-                                                                    default:
-                                                                        $color = 'secondary'; // abu-abu
-                                                                        break;
-                                                                }
-                                                            @endphp
-
-                                                            <span
-                                                                class="badge badge-{{ $color }}">C{{ $clusterNum }}</span>
-                                                        </td>
-
-                                                        @foreach ($features as $f)
-                                                            <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
-                                                        @endforeach
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div> {{-- /.table-responsive --}}
-                                </div> {{-- /.card-body --}}
-                            </div> {{-- /.card --}}
-                        </div> {{-- /.col --}}
-                    </div> {{-- /.row --}}
-                @endif
-
-                {{-- Menetapkan data ke kelas terdekat --}}
-                @if (!empty($newCentroids))
-                    <div class="row mt-4">
-                        @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
-                            <div class="col-md-4 mb-4"> {{-- 2 kolom per baris pada layar medium ke atas --}}
-                                <div class="card shadow-sm">
-                                    <div class="card-header">
-                                        <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
-                                            @switch($clusterNumber + 1)
-                                                @case(1)
-                                                    Sering Digunakan
-                                                @break
-
-                                                @case(2)
-                                                    Cukup Sering Digunakan
-                                                @break
-
-                                                @case(3)
-                                                    Jarang Digunakan
-                                                @break
-
-                                                @case(4)
-                                                    Sangat Jarang Digunakan
-                                                @break
-
-                                                @case(5)
-                                                    Hampir Tidak Pernah Digunakan
-                                                @break
-
-                                                @default
-                                                    Tidak Ada Data
-                                            @endswitch
-                                        </h5>
-                                    </div>
-
-                                    <div class="card-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered align-middle">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th class=" text-center">No</th>
-                                                        <th>E-Wallet</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach ($result as $index => $platforms)
-                                                        @if ($loop->first)
-                                                            @continue {{-- Skip iterasi pertama --}}
-                                                        @endif
-                                                        {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
-                                                        @foreach (explode(',', $platforms) as $platform)
-                                                            <tr>
-                                                                <td class=" text-center">{{ $loop->iteration }}</td>
-                                                                {{-- Menampilkan nomor urut yang benar --}}
-                                                                <td>{{ trim($platform) }}</td> {{-- Menampilkan nama platform setelah di-trim --}}
-                                                            </tr>
-                                                        @endforeach
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div> {{-- /.table-responsive --}}
-                                    </div> {{-- /.card-body --}}
-                                </div> {{-- /.card --}}
-                            </div> {{-- /.col-md-6 --}}
-                        @endforeach
-                    </div> {{-- /.row --}}
-                @endif
-
-
-
-                {{-- SECTION METRIK CLUSTERING --}}
-                <div class="row mt-4">
-
-                    {{-- Rata-rata Centroid --}}
-                    @if (!empty($centroidAverages))
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Rata-rata Centroid</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th class=" text-center" style="width: 30%">Centroid</th>
-                                                    <th>Rata-rata</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($centroidAverages as $clusterName => $average)
-                                                    <tr>
-                                                        <td class=" text-center">
-                                                            @php
-                                                                // Ambil nomor cluster, misal "C3" → 3
-                                                                preg_match('/C(\d+)/', $clusterName, $matches);
-                                                                $clusterNum = isset($matches[1])
-                                                                    ? (int) $matches[1]
-                                                                    : 0;
-
-                                                                $color = 'primary'; // default
-
-                                                                switch ($clusterNum) {
-                                                                    case 1:
-                                                                        $color = 'primary'; // biru
-                                                                        break;
-                                                                    case 2:
-                                                                        $color = 'warning'; // kuning
-                                                                        break;
-                                                                    case 3:
-                                                                        $color = 'success'; // hijau
-                                                                        break;
-                                                                    case 4:
-                                                                        $color = 'danger'; // merah
-                                                                        break;
-                                                                    case 5:
-                                                                        $color = 'info'; // biru muda
-                                                                        break;
-                                                                    default:
-                                                                        $color = 'secondary'; // abu-abu
-                                                                        break;
-                                                                }
-                                                            @endphp
-
-                                                            <span
-                                                                class="badge badge-{{ $color }}">{{ $clusterName }}</span>
-                                                        </td>
-                                                        <td>{{ number_format($average, 4) }}</td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    {{-- SSE per Iterasi + Total SSE --}}
-                    @if (!empty($allSSEPerIteration))
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">SSE per Iterasi</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th class=" text-center" style="width: 40%">Iterasi</th>
-                                                    <th class=" text-center">SSE</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($allSSEPerIteration as $iterationIndex => $sse)
-                                                    <tr>
-                                                        <td class=" text-center">Iterasi {{ $iterationIndex + 1 }}</td>
-                                                        <td class=" text-center">{{ number_format($sse, 4) }}</td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-
-                                    <div class="mt-3">
-                                        <div
-                                            class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
-                                            <div>
-                                                {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
-                                                <div class="font-weight-semibold mr-2">
-                                                    Total SSE :
-                                                </div>
-                                            </div>
-
-                                            <span class="badge badge-primary">
-                                                {{ number_format($totalSSE, 4) }}
-                                            </span>
+                    <div class="card-body">
+                        {{-- Centroid akhir (konvergen) --}}
+                        @if (!empty($newCentroids))
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Centroid Akhir (Konvergen)</h5>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
 
-                </div>
-
-                <div class="row mt-2">
-
-                    {{-- SSW --}}
-                    @if (!empty($centroidSum))
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header">
-                                    <h5 class="mb-0">SSW per Cluster</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th class=" text-center" style="width: 30%">Cluster</th>
-                                                    <th class=" text-center">Nilai</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($centroidSum as $clusterName => $sum)
-                                                    <tr>
-                                                        <td class=" text-center">
-                                                            @php
-                                                                // Ambil nomor cluster dari nama cluster, misal "C2" → 2
-                                                                preg_match('/C(\d+)/', $clusterName, $matches);
-                                                                $clusterNum = isset($matches[1])
-                                                                    ? (int) $matches[1]
-                                                                    : 0;
-
-                                                                $color = 'primary'; // default
-
-                                                                switch ($clusterNum) {
-                                                                    case 1:
-                                                                        $color = 'primary'; // biru
-                                                                        break;
-                                                                    case 2:
-                                                                        $color = 'warning'; // kuning
-                                                                        break;
-                                                                    case 3:
-                                                                        $color = 'success'; // hijau
-                                                                        break;
-                                                                    case 4:
-                                                                        $color = 'danger'; // merah
-                                                                        break;
-                                                                    case 5:
-                                                                        $color = 'info'; // biru muda
-                                                                        break;
-                                                                    default:
-                                                                        $color = 'secondary'; // abu-abu
-                                                                        break;
-                                                                }
-                                                            @endphp
-
-                                                            <span
-                                                                class="badge badge-{{ $color }}">{{ $clusterName }}</span>
-                                                        </td class=" text-center">
-                                                        <td>{{ number_format($sum, 4) }}</td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    {{-- DBI --}}
-                    {{-- Tabel DBI --}}
-                    @if (!empty($dbiPerCentroid))
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Davies-Bouldin Index per Centroid</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered text-center align-middle mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th class=" text-center" style="width: 30%">Pasangan Centroid</th>
-                                                    <th class=" text-center">Jarak Euclidean</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach ($dbiPerCentroid as $row)
-                                                    <tr>
-                                                        <td class=" text-center">
-                                                            @php
-                                                                // Ambil cluster pertama dari pair, misal "C1 - C2" → 1
-                                                                preg_match('/C(\d+)/', $row['pair'], $matches);
-                                                                $clusterNum = isset($matches[1])
-                                                                    ? (int) $matches[1]
-                                                                    : 0;
-
-                                                                $color = 'primary';
-
-                                                                switch ($clusterNum) {
-                                                                    case 1:
-                                                                        $color = 'primary'; // biru
-                                                                        break;
-                                                                    case 2:
-                                                                        $color = 'warning'; // kuning
-                                                                        break;
-                                                                    case 3:
-                                                                        $color = 'success'; // hijau
-                                                                        break;
-                                                                    case 4:
-                                                                        $color = 'danger'; // merah
-                                                                        break;
-                                                                    case 5:
-                                                                        $color = 'info'; // biru muda
-                                                                        break;
-                                                                    default:
-                                                                        $color = 'secondary'; // abu-abu
-                                                                        break;
-                                                                }
-                                                            @endphp
-
-                                                            <span
-                                                                class="badge badge-{{ $color }}">{{ $row['pair'] }}</span>
-                                                        </td>
-                                                        <td class=" text-center">
-                                                            {{ number_format($row['euclidean'], 4, ',', '.') }}</td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {{-- Optional: DBI summary (kalau punya total DBI) --}}
-                                    @isset($dbiTotal)
-                                        <div class="mt-3 text-end">
-                                            <h6 class="mb-0">
-                                                <strong>Total DBI:</strong> {{ number_format($dbiTotal, 4, ',', '.') }}
-                                            </h6>
-                                        </div>
-                                    @endisset
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-
-                    {{-- Tabel R --}}
-                    @if (!empty($centroidSum) && !empty($dbiPerCentroid))
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow-sm h-100">
-                                <div class="card-header">
-                                    <h5 class="mb-0">Tabel Perhitungan R</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm text-center table-bordered align-middle mb-0">
-
-                                            <tbody>
-                                                @php
-                                                    $totalClusters = count($centroidSum); // Total cluster
-                                                    $rValues = []; // Array to store R values
-                                                @endphp
-
-                                                {{-- Iterasi untuk menghitung R1, R2, ..., Rn --}}
-                                                @php
-                                                    // Pastikan $centroidSum asoc ['C1'=>..., 'C2'=>..., ...]
-                                                    $totalClusters = count($centroidSum);
-                                                    $rValues = [];
-
-                                                    // 1) Build lookup map dari $dbiPerCentroid yang kamu punya
-                                                    // Expect $dbiPerCentroid is an array of rows like: ['pair'=>'C1-C2','euclidean'=>43.72] (but could have spaces/dashes)
-                                                    $distanceMap = [];
-
-                                                    if (!empty($dbiPerCentroid) && is_array($dbiPerCentroid)) {
-                                                        foreach ($dbiPerCentroid as $row) {
-                                                            if (empty($row['pair'])) {
-                                                                continue;
-                                                            }
-                                                            // Normalisasi key: hapus spasi, ubah en-dash/longdash ke hyphen, uppercase
-                                                            $k = str_replace(
-                                                                ['–', '—', ' '],
-                                                                ['-', '-', ''],
-                                                                strtoupper($row['pair']),
-                                                            );
-                                                            $k = str_replace(['--'], ['-'], $k);
-                                                            $distanceMap[$k] = isset($row['euclidean'])
-                                                                ? (float) $row['euclidean']
-                                                                : (float) ($row['distance'] ?? 0);
-                                                        }
-                                                    }
-
-                                                    // optionally if you have dbiMatrix (assoc), merge into distanceMap
-                                                    if (!empty($dbiMatrix) && is_array($dbiMatrix)) {
-                                                        foreach ($dbiMatrix as $a => $cols) {
-                                                            foreach ($cols as $b => $val) {
-                                                                $key = strtoupper($a . '-' . $b);
-                                                                $distanceMap[$key] = (float) $val;
-                                                            }
-                                                        }
-                                                    }
-
-                                                    // Helper to get distance robustly
-                                                    $getDistance = function ($a, $b) use ($distanceMap) {
-                                                        $pair1 = strtoupper($a . '-' . $b);
-                                                        $pair2 = strtoupper($b . '-' . $a);
-                                                        if (isset($distanceMap[$pair1])) {
-                                                            return $distanceMap[$pair1];
-                                                        }
-                                                        if (isset($distanceMap[$pair2])) {
-                                                            return $distanceMap[$pair2];
-                                                        }
-                                                        // not found
-                                                        return null;
-                                                    };
-                                                @endphp
-
-                                                <table class="table text-center table-bordered">
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered text-center align-middle mb-0">
                                                     <thead class="table-light">
                                                         <tr>
-                                                            <th style="width: 30%">Centorid</th>
-                                                            <th>Nilai R</th>
+                                                            <th style="width: 10%">Cluster</th>
+                                                            @foreach ($features as $feature)
+                                                                <th>{{ $feature }}</th>
+                                                            @endforeach
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-
-                                                        @php
-                                                            $rValues = [];
-                                                        @endphp
-
-                                                        {{-- R1 sampai R(n-1) --}}
-                                                        @for ($i = 1; $i < $totalClusters; $i++)
-                                                            @php
-                                                                $a = "C{$i}";
-                                                                $b = 'C' . ($i + 1);
-                                                                $pairLabel = "{$a}-{$b}";
-
-                                                                // Ambil SSW
-                                                                $ssw1 = $centroidSum[$a] ?? null;
-                                                                $ssw2 = $centroidSum[$b] ?? null;
-
-                                                                // Ambil distance dengan closure (menjamin ambil pasangan urut)
-                                                                $distance = $getDistance($a, $b);
-
-                                                                // Hitung R atau error message
-                                                                if ($ssw1 === null || $ssw2 === null) {
-                                                                    $r = 'SSW NOT FOUND';
-                                                                } elseif ($distance === null) {
-                                                                    $r = 'DIST NOT FOUND';
-                                                                } elseif ($distance == 0) {
-                                                                    $r = 'DIST=0';
-                                                                } else {
-                                                                    $r = ($ssw1 + $ssw2) / $distance;
-                                                                    $rValues[] = $r;
-                                                                }
-                                                            @endphp
-
+                                                        @foreach ($newCentroids as $index => $centroid)
                                                             <tr>
-                                                                <td class="text-center">
+                                                                <td>
                                                                     @php
-                                                                        $color = match ($i) {
-                                                                            1 => 'primary', // biru
-                                                                            2 => 'warning', // kuning
-                                                                            3 => 'success', // hijau
-                                                                            4 => 'danger', // merah
-                                                                            5 => 'info', // biru muda
-                                                                            default => 'secondary', // abu-abu
-                                                                        };
+                                                                        $clusterNum = $index + 1;
+                                                                        $color = 'primary'; // default
+
+                                                                        switch ($clusterNum) {
+                                                                            case 1:
+                                                                                $color = 'primary'; // biru
+                                                                                break;
+                                                                            case 2:
+                                                                                $color = 'warning'; // kuning
+                                                                                break;
+                                                                            case 3:
+                                                                                $color = 'success'; // hijau
+                                                                                break;
+                                                                            case 4:
+                                                                                $color = 'danger'; // merah
+                                                                                break;
+                                                                            case 5:
+                                                                                $color = 'info'; // biru muda
+                                                                                break;
+                                                                            default:
+                                                                                $color = 'secondary'; // abu-abu
+                                                                                break;
+                                                                        }
                                                                     @endphp
 
                                                                     <span
-                                                                        class="badge badge-{{ $color }}">R{{ $i }}</span>
+                                                                        class="badge badge-{{ $color }}">C{{ $clusterNum }}</span>
                                                                 </td>
 
-                                                                <td class="text-end">
-                                                                    {{ is_numeric($r) ? number_format($r, 6) : $r }}</td>
+                                                                @foreach ($features as $f)
+                                                                    <td>{{ number_format($centroid[$f] ?? 0, 2) }}</td>
+                                                                @endforeach
                                                             </tr>
-                                                        @endfor
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div> {{-- /.table-responsive --}}
+                                        </div> {{-- /.card-body --}}
+                                    </div> {{-- /.card --}}
+                                </div> {{-- /.col --}}
+                            </div> {{-- /.row --}}
+                        @endif
+
+                        {{-- Menetapkan data ke kelas terdekat --}}
+                        @if (!empty($newCentroids))
+                            <div class="row mt-4">
+                                @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
+                                    <div class="col-md-4 mb-4"> {{-- 2 kolom per baris pada layar medium ke atas --}}
+                                        <div class="card shadow-sm">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
+                                                    @switch($clusterNumber + 1)
+                                                        @case(1)
+                                                            Sering Digunakan
+                                                        @break
+
+                                                        @case(2)
+                                                            Cukup Sering Digunakan
+                                                        @break
+
+                                                        @case(3)
+                                                            Jarang Digunakan
+                                                        @break
+
+                                                        @case(4)
+                                                            Sangat Jarang Digunakan
+                                                        @break
+
+                                                        @case(5)
+                                                            Hampir Tidak Pernah Digunakan
+                                                        @break
+
+                                                        @default
+                                                            Tidak Ada Data
+                                                    @endswitch
+                                                </h5>
+                                            </div>
+
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-bordered align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th class=" text-center">No</th>
+                                                                <th>E-Wallet</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach ($result as $index => $platforms)
+                                                                @if ($loop->first)
+                                                                    @continue {{-- Skip iterasi pertama --}}
+                                                                @endif
+                                                                {{-- Memisahkan string platform dengan explode dan menghilangkan spasi yang tidak perlu --}}
+                                                                @foreach (explode(',', $platforms) as $platform)
+                                                                    <tr>
+                                                                        <td class=" text-center">{{ $loop->iteration }}
+                                                                        </td>
+                                                                        {{-- Menampilkan nomor urut yang benar --}}
+                                                                        <td>{{ trim($platform) }}</td>
+                                                                        {{-- Menampilkan nama platform setelah di-trim --}}
+                                                                    </tr>
+                                                                @endforeach
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div> {{-- /.table-responsive --}}
+                                            </div> {{-- /.card-body --}}
+                                        </div> {{-- /.card --}}
+                                    </div> {{-- /.col-md-6 --}}
+                                @endforeach
+                            </div> {{-- /.row --}}
+                        @endif
+
+                    </div>
+                </div>
+                {{-- =======================
+    SECTION: METRIK CLUSTERING
+=========================== --}}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Rata Rata</h4>
+                    </div>
+
+                    <div class="card-body">
+                        {{-- SECTION METRIK CLUSTERING --}}
+                        <div class="row mt-2">
+
+                            {{-- Rata-rata Centroid --}}
+                            @if (!empty($centroidAverages))
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Rata-rata Centroid</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class=" text-center" style="width: 30%">Centroid</th>
+                                                            <th>Rata-rata</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($centroidAverages as $clusterName => $average)
+                                                            <tr>
+                                                                <td class=" text-center">
+                                                                    @php
+                                                                        // Ambil nomor cluster, misal "C3" → 3
+                                                                        preg_match('/C(\d+)/', $clusterName, $matches);
+                                                                        $clusterNum = isset($matches[1])
+                                                                            ? (int) $matches[1]
+                                                                            : 0;
+
+                                                                        $color = 'primary'; // default
+
+                                                                        switch ($clusterNum) {
+                                                                            case 1:
+                                                                                $color = 'primary'; // biru
+                                                                                break;
+                                                                            case 2:
+                                                                                $color = 'warning'; // kuning
+                                                                                break;
+                                                                            case 3:
+                                                                                $color = 'success'; // hijau
+                                                                                break;
+                                                                            case 4:
+                                                                                $color = 'danger'; // merah
+                                                                                break;
+                                                                            case 5:
+                                                                                $color = 'info'; // biru muda
+                                                                                break;
+                                                                            default:
+                                                                                $color = 'secondary'; // abu-abu
+                                                                                break;
+                                                                        }
+                                                                    @endphp
+
+                                                                    <span
+                                                                        class="badge badge-{{ $color }}">{{ $clusterName }}</span>
+                                                                </td>
+                                                                <td>{{ number_format($average, 4) }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- SSE per Iterasi + Total SSE --}}
+                            @if (!empty($allSSEPerIteration))
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">SSE per Iterasi</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class=" text-center" style="width: 40%">Iterasi</th>
+                                                            <th class=" text-center">SSE</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($allSSEPerIteration as $iterationIndex => $sse)
+                                                            <tr>
+                                                                <td class=" text-center">Iterasi
+                                                                    {{ $iterationIndex + 1 }}
+                                                                </td>
+                                                                <td class=" text-center">{{ number_format($sse, 4) }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
 
 
-                                                        {{-- R terakhir: Cn - C1 --}}
+                                            <div class="mt-3">
+                                                <div
+                                                    class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
+                                                    <div>
+                                                        {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
+                                                        <div class="font-weight-semibold mr-2">
+                                                            Total SSE :
+                                                        </div>
+                                                    </div>
+
+                                                    <span class="badge badge-primary">
+                                                        {{ number_format($totalSSE, 4) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                        </div>
+
+                        <div class="row mt-2">
+
+                            {{-- SSW --}}
+                            @if (!empty($centroidSum))
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">SSW per Cluster</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class=" text-center" style="width: 30%">Cluster</th>
+                                                            <th class=" text-center">Nilai</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($centroidSum as $clusterName => $sum)
+                                                            <tr>
+                                                                <td class=" text-center">
+                                                                    @php
+                                                                        // Ambil nomor cluster dari nama cluster, misal "C2" → 2
+                                                                        preg_match('/C(\d+)/', $clusterName, $matches);
+                                                                        $clusterNum = isset($matches[1])
+                                                                            ? (int) $matches[1]
+                                                                            : 0;
+
+                                                                        $color = 'primary'; // default
+
+                                                                        switch ($clusterNum) {
+                                                                            case 1:
+                                                                                $color = 'primary'; // biru
+                                                                                break;
+                                                                            case 2:
+                                                                                $color = 'warning'; // kuning
+                                                                                break;
+                                                                            case 3:
+                                                                                $color = 'success'; // hijau
+                                                                                break;
+                                                                            case 4:
+                                                                                $color = 'danger'; // merah
+                                                                                break;
+                                                                            case 5:
+                                                                                $color = 'info'; // biru muda
+                                                                                break;
+                                                                            default:
+                                                                                $color = 'secondary'; // abu-abu
+                                                                                break;
+                                                                        }
+                                                                    @endphp
+
+                                                                    <span
+                                                                        class="badge badge-{{ $color }}">{{ $clusterName }}</span>
+                                                                </td class=" text-center">
+                                                                <td>{{ number_format($sum, 4) }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- DBI --}}
+                            {{-- Tabel DBI --}}
+                            @if (!empty($dbiPerCentroid))
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Davies-Bouldin Index per Centroid</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered text-center align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class=" text-center" style="width: 30%">Pasangan
+                                                                Centroid
+                                                            </th>
+                                                            <th class=" text-center">Jarak Euclidean</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($dbiPerCentroid as $row)
+                                                            <tr>
+                                                                <td class=" text-center">
+                                                                    @php
+                                                                        // Ambil cluster pertama dari pair, misal "C1 - C2" → 1
+                                                                        preg_match('/C(\d+)/', $row['pair'], $matches);
+                                                                        $clusterNum = isset($matches[1])
+                                                                            ? (int) $matches[1]
+                                                                            : 0;
+
+                                                                        $color = 'primary';
+
+                                                                        switch ($clusterNum) {
+                                                                            case 1:
+                                                                                $color = 'primary'; // biru
+                                                                                break;
+                                                                            case 2:
+                                                                                $color = 'warning'; // kuning
+                                                                                break;
+                                                                            case 3:
+                                                                                $color = 'success'; // hijau
+                                                                                break;
+                                                                            case 4:
+                                                                                $color = 'danger'; // merah
+                                                                                break;
+                                                                            case 5:
+                                                                                $color = 'info'; // biru muda
+                                                                                break;
+                                                                            default:
+                                                                                $color = 'secondary'; // abu-abu
+                                                                                break;
+                                                                        }
+                                                                    @endphp
+
+                                                                    <span
+                                                                        class="badge badge-{{ $color }}">{{ $row['pair'] }}</span>
+                                                                </td>
+                                                                <td class=" text-center">
+                                                                    {{ number_format($row['euclidean'], 4, ',', '.') }}
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {{-- Optional: DBI summary (kalau punya total DBI) --}}
+                                            @isset($dbiTotal)
+                                                <div class="mt-3 text-end">
+                                                    <h6 class="mb-0">
+                                                        <strong>Total DBI:</strong>
+                                                        {{ number_format($dbiTotal, 4, ',', '.') }}
+                                                    </h6>
+                                                </div>
+                                            @endisset
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+
+                            {{-- Tabel R --}}
+                            @if (!empty($centroidSum) && !empty($dbiPerCentroid))
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Tabel Perhitungan R</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm text-center table-bordered align-middle mb-0">
+
+                                                    <tbody>
                                                         @php
-                                                            $a = "C{$totalClusters}";
-                                                            $b = 'C1';
-                                                            $pairLabel = "{$a}-{$b}";
-
-                                                            $sswLast = $centroidSum[$a] ?? null;
-                                                            $sswFirst = $centroidSum[$b] ?? null;
-
-                                                            // Ambil distance (closure akan otomatis sort → C1-C5)
-                                                            $distanceLast = $getDistance($a, $b);
-
-                                                            if ($sswLast === null || $sswFirst === null) {
-                                                                $rLast = 'SSW NOT FOUND';
-                                                            } elseif ($distanceLast === null) {
-                                                                $rLast = 'DIST NOT FOUND';
-                                                            } elseif ($distanceLast == 0) {
-                                                                $rLast = 'DIST=0';
-                                                            } else {
-                                                                $rLast = ($sswLast + $sswFirst) / $distanceLast;
-                                                                $rValues[] = $rLast;
-                                                            }
+                                                            $totalClusters = count($centroidSum); // Total cluster
+                                                            $rValues = []; // Array to store R values
                                                         @endphp
 
-                                                        <tr>
-                                                            <td class="text-end">
+                                                        {{-- Iterasi untuk menghitung R1, R2, ..., Rn --}}
+                                                        @php
+                                                            // Pastikan $centroidSum asoc ['C1'=>..., 'C2'=>..., ...]
+                                                            $totalClusters = count($centroidSum);
+                                                            $rValues = [];
+
+                                                            // 1) Build lookup map dari $dbiPerCentroid yang kamu punya
+                                                            // Expect $dbiPerCentroid is an array of rows like: ['pair'=>'C1-C2','euclidean'=>43.72] (but could have spaces/dashes)
+                                                            $distanceMap = [];
+
+                                                            if (!empty($dbiPerCentroid) && is_array($dbiPerCentroid)) {
+                                                                foreach ($dbiPerCentroid as $row) {
+                                                                    if (empty($row['pair'])) {
+                                                                        continue;
+                                                                    }
+                                                                    // Normalisasi key: hapus spasi, ubah en-dash/longdash ke hyphen, uppercase
+                                                                    $k = str_replace(
+                                                                        ['–', '—', ' '],
+                                                                        ['-', '-', ''],
+                                                                        strtoupper($row['pair']),
+                                                                    );
+                                                                    $k = str_replace(['--'], ['-'], $k);
+                                                                    $distanceMap[$k] = isset($row['euclidean'])
+                                                                        ? (float) $row['euclidean']
+                                                                        : (float) ($row['distance'] ?? 0);
+                                                                }
+                                                            }
+
+                                                            // optionally if you have dbiMatrix (assoc), merge into distanceMap
+                                                            if (!empty($dbiMatrix) && is_array($dbiMatrix)) {
+                                                                foreach ($dbiMatrix as $a => $cols) {
+                                                                    foreach ($cols as $b => $val) {
+                                                                        $key = strtoupper($a . '-' . $b);
+                                                                        $distanceMap[$key] = (float) $val;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            // Helper to get distance robustly
+                                                            $getDistance = function ($a, $b) use ($distanceMap) {
+                                                                $pair1 = strtoupper($a . '-' . $b);
+                                                                $pair2 = strtoupper($b . '-' . $a);
+                                                                if (isset($distanceMap[$pair1])) {
+                                                                    return $distanceMap[$pair1];
+                                                                }
+                                                                if (isset($distanceMap[$pair2])) {
+                                                                    return $distanceMap[$pair2];
+                                                                }
+                                                                // not found
+                                                                return null;
+                                                            };
+                                                        @endphp
+
+                                                        <table class="table text-center table-bordered">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width: 30%">Centorid</th>
+                                                                    <th>Nilai R</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+
                                                                 @php
-                                                                    $color = match ($totalClusters) {
-                                                                        1 => 'primary', // biru
-                                                                        2 => 'warning', // kuning
-                                                                        3 => 'success', // hijau
-                                                                        4 => 'danger', // merah
-                                                                        5 => 'info', // biru muda
-                                                                        default => 'secondary',
-                                                                    };
+                                                                    $rValues = [];
                                                                 @endphp
 
-                                                                <span
-                                                                    class="badge badge-{{ $color }}">R{{ $totalClusters }}</span>
-                                                            </td>
-                                                            <td class="text-end">
-                                                                {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
-                                                            </td>
-                                                        </tr>
+                                                                {{-- R1 sampai R(n-1) --}}
+                                                                @for ($i = 1; $i < $totalClusters; $i++)
+                                                                    @php
+                                                                        $a = "C{$i}";
+                                                                        $b = 'C' . ($i + 1);
+                                                                        $pairLabel = "{$a}-{$b}";
+
+                                                                        // Ambil SSW
+                                                                        $ssw1 = $centroidSum[$a] ?? null;
+                                                                        $ssw2 = $centroidSum[$b] ?? null;
+
+                                                                        // Ambil distance dengan closure (menjamin ambil pasangan urut)
+                                                                        $distance = $getDistance($a, $b);
+
+                                                                        // Hitung R atau error message
+                                                                        if ($ssw1 === null || $ssw2 === null) {
+                                                                            $r = 'SSW NOT FOUND';
+                                                                        } elseif ($distance === null) {
+                                                                            $r = 'DIST NOT FOUND';
+                                                                        } elseif ($distance == 0) {
+                                                                            $r = 'DIST=0';
+                                                                        } else {
+                                                                            $r = ($ssw1 + $ssw2) / $distance;
+                                                                            $rValues[] = $r;
+                                                                        }
+                                                                    @endphp
+
+                                                                    <tr>
+                                                                        <td class="text-center">
+                                                                            @php
+                                                                                $color = match ($i) {
+                                                                                    1 => 'primary', // biru
+                                                                                    2 => 'warning', // kuning
+                                                                                    3 => 'success', // hijau
+                                                                                    4 => 'danger', // merah
+                                                                                    5 => 'info', // biru muda
+                                                                                    default => 'secondary', // abu-abu
+                                                                                };
+                                                                            @endphp
+
+                                                                            <span
+                                                                                class="badge badge-{{ $color }}">R{{ $i }}</span>
+                                                                        </td>
+
+                                                                        <td class="text-end">
+                                                                            {{ is_numeric($r) ? number_format($r, 6) : $r }}
+                                                                        </td>
+                                                                    </tr>
+                                                                @endfor
 
 
-                                                        {{-- Total R --}}
-                                                        @php
-                                                            $totalR = (1 / $totalClusters) * array_sum($rValues);
-                                                        @endphp
+                                                                {{-- R terakhir: Cn - C1 --}}
+                                                                @php
+                                                                    $a = "C{$totalClusters}";
+                                                                    $b = 'C1';
+                                                                    $pairLabel = "{$a}-{$b}";
+
+                                                                    $sswLast = $centroidSum[$a] ?? null;
+                                                                    $sswFirst = $centroidSum[$b] ?? null;
+
+                                                                    // Ambil distance (closure akan otomatis sort → C1-C5)
+                                                                    $distanceLast = $getDistance($a, $b);
+
+                                                                    if ($sswLast === null || $sswFirst === null) {
+                                                                        $rLast = 'SSW NOT FOUND';
+                                                                    } elseif ($distanceLast === null) {
+                                                                        $rLast = 'DIST NOT FOUND';
+                                                                    } elseif ($distanceLast == 0) {
+                                                                        $rLast = 'DIST=0';
+                                                                    } else {
+                                                                        $rLast = ($sswLast + $sswFirst) / $distanceLast;
+                                                                        $rValues[] = $rLast;
+                                                                    }
+                                                                @endphp
+
+                                                                <tr>
+                                                                    <td class="text-end">
+                                                                        @php
+                                                                            $color = match ($totalClusters) {
+                                                                                1 => 'primary', // biru
+                                                                                2 => 'warning', // kuning
+                                                                                3 => 'success', // hijau
+                                                                                4 => 'danger', // merah
+                                                                                5 => 'info', // biru muda
+                                                                                default => 'secondary',
+                                                                            };
+                                                                        @endphp
+
+                                                                        <span
+                                                                            class="badge badge-{{ $color }}">R{{ $totalClusters }}</span>
+                                                                    </td>
+                                                                    <td class="text-end">
+                                                                        {{ is_numeric($rLast) ? number_format($rLast, 6) : $rLast }}
+                                                                    </td>
+                                                                </tr>
 
 
-                                                        {{-- <tr class="fw-bold">
+                                                                {{-- Total R --}}
+                                                                @php
+                                                                    $totalR =
+                                                                        (1 / $totalClusters) * array_sum($rValues);
+                                                                @endphp
+
+
+                                                                {{-- <tr class="fw-bold">
                                                             <td>Total R</td>
                                                             <td class="text-end">{{ number_format($totalR, 6) }}</td>
                                                         </tr> --}}
 
-                                                    </tbody>
-                                                </table>
-                                                <div class="mt-3">
-                                                    <div
-                                                        class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
-                                                        <div>
-                                                            {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
-                                                            <div class="font-weight-semibold mr-2">
-                                                                Total R :
+                                                            </tbody>
+                                                        </table>
+                                                        <div class="mt-3">
+                                                            <div
+                                                                class="d-flex justify-content-start align-items-center p-2 border rounded bg-light">
+                                                                <div>
+                                                                    {{-- <div class="small text-muted mb-1">SSE per Iterasi</div> --}}
+                                                                    <div class="font-weight-semibold mr-2">
+                                                                        Total R :
+                                                                    </div>
+                                                                </div>
+
+                                                                <span class="badge badge-primary">
+                                                                    {{ number_format($totalR, 6) }}
+                                                                </span>
                                                             </div>
                                                         </div>
 
-                                                        <span class="badge badge-primary">
-                                                            {{ number_format($totalR, 6) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
 
-
-                                            </tbody>
-                                        </table>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
+
                         </div>
+
+
+
+
+
+
+
+
+                    </div>
+                </div>
+            </div>
+        @endsection
+
+        @push('script')
+            <script>
+                (function() {
+                    const clusterSelect = document.getElementById('cluster');
+
+                    function showBlock(k) {
+                        [2, 3, 4, 5].forEach(n => {
+                            const block = document.getElementById('block-' + n);
+                            if (!block) return;
+                            block.style.display = 'none';
+                            block.querySelectorAll('select').forEach(s => {
+                                s.disabled = true;
+                                s.value = '';
+                            });
+                        });
+
+                        const active = document.getElementById('block-' + k);
+                        if (active) {
+                            active.style.display = 'block';
+                            active.querySelectorAll('select').forEach(s => {
+                                s.disabled = false;
+                            });
+                        }
+                    }
+
+                    @if (!empty($selectedCluster))
+                        showBlock({{ $selectedCluster }});
                     @endif
 
-
-
-
-                </div>
-
-
-
-
-
-            </div>
-        </div>
-    </div>
-@endsection
-
-@push('script')
-    <script>
-        (function() {
-            const clusterSelect = document.getElementById('cluster');
-
-            function showBlock(k) {
-                [2, 3, 4, 5].forEach(n => {
-                    const block = document.getElementById('block-' + n);
-                    if (!block) return;
-                    block.style.display = 'none';
-                    block.querySelectorAll('select').forEach(s => {
-                        s.disabled = true;
-                        s.value = '';
-                    });
-                });
-
-                const active = document.getElementById('block-' + k);
-                if (active) {
-                    active.style.display = 'block';
-                    active.querySelectorAll('select').forEach(s => {
-                        s.disabled = false;
-                    });
-                }
-            }
-
-            @if (!empty($selectedCluster))
-                showBlock({{ $selectedCluster }});
-            @endif
-
-            if (clusterSelect) {
-                clusterSelect.addEventListener('change', function() {
-                    if (this.value) showBlock(this.value);
-                });
-            }
-        })();
-    </script>
-@endpush
+                    if (clusterSelect) {
+                        clusterSelect.addEventListener('change', function() {
+                            if (this.value) showBlock(this.value);
+                        });
+                    }
+                })();
+            </script>
+        @endpush
