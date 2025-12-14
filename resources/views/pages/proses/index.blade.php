@@ -449,36 +449,23 @@
                             {{-- Menetapkan data ke kelas terdekat --}}
                             @if (!empty($newCentroids))
                                 <div class="row mt-4">
-                                    @foreach ($allClusterResultsPerIteration[$iterationIndex] as $clusterNumber => $result)
+                                    @php
+                                        $finalIterIndex = count($allClusterResultsPerIteration) - 1;
+                                    @endphp
+
+                                    @foreach ($allClusterResultsPerIteration[$finalIterIndex] as $clusterNumber => $result)
                                         <div class="col-md-4 mb-2"> {{-- 2 kolom per baris pada layar medium ke atas --}}
                                             <div class="card shadow-sm">
                                                 <div class="card-header">
-                                                    <h5 class="mb-0">Cluster {{ $clusterNumber + 1 }}:
-                                                        @switch($clusterNumber + 1)
-                                                            @case(1)
-                                                                Sering Digunakan
-                                                            @break
+                                                    @php
+                                                        $clusterName = 'C' . ($clusterNumber + 1);
+                                                    @endphp
 
-                                                            @case(2)
-                                                                Cukup Sering Digunakan
-                                                            @break
-
-                                                            @case(3)
-                                                                Jarang Digunakan
-                                                            @break
-
-                                                            @case(4)
-                                                                Sangat Jarang Digunakan
-                                                            @break
-
-                                                            @case(5)
-                                                                Hampir Tidak Pernah Digunakan
-                                                            @break
-
-                                                            @default
-                                                                Tidak Ada Data
-                                                        @endswitch
+                                                    <h5 class="mb-0">
+                                                        Cluster {{ $clusterNumber + 1 }}:
+                                                        {{ $clusterLabel[$clusterName] ?? 'Tidak Ada Data' }}
                                                     </h5>
+
                                                 </div>
 
                                                 <div class="card-body">

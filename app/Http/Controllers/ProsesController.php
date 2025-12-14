@@ -18,6 +18,11 @@ class ProsesController extends Controller
             'selectedDatasets' => null,
         ]);
     }
+    public function show($id)
+    {
+        return redirect()->route('proses.index');
+    }
+
     public function process(Request $request)
     {
         $request->validate([
@@ -198,10 +203,42 @@ class ProsesController extends Controller
         // --- Calculate centroid averages for each cluster ---
         $centroidAverages = [];
         foreach ($newCentroids as $index => $centroid) {
-            $clusterName = 'C' . ($index + 1); // C1, C2, C3, ...
-            $average = array_sum($centroid) / count($centroid);  // Calculate average for each centroid
+            $clusterName = 'C' . ($index + 1);
+            $average = array_sum($centroid) / count($centroid);
             $centroidAverages[$clusterName] = $average;
         }
+        // === Ranking cluster berdasarkan rata-rata centroid (tertinggi = paling sering) ===
+        $sorted = $centroidAverages;
+        arsort($sorted); // descending
+
+        $rankLabels = [
+            1 => 'Sering Digunakan',
+            2 => 'Cukup Sering Digunakan',
+            3 => 'Jarang Digunakan',
+            4 => 'Sangat Jarang Digunakan',
+            5 => 'Hampir Tidak Pernah Digunakan',
+        ];
+
+        $rankColors = [
+            1 => 'primary',
+            2 => 'warning',
+            3 => 'success',
+            4 => 'danger',
+            5 => 'info',
+        ];
+
+        $clusterRank = [];
+        $clusterLabel = [];
+        $clusterColor = [];
+
+        $rank = 1;
+        foreach ($sorted as $clusterName => $avg) {
+            $clusterRank[$clusterName] = $rank;
+            $clusterLabel[$clusterName] = $rankLabels[$rank] ?? 'Tidak Ada Data';
+            $clusterColor[$clusterName] = $rankColors[$rank] ?? 'secondary';
+            $rank++;
+        }
+
         // --- Calculate centroid averages for each cluster ---
         $centroidSum = [];
         foreach ($newCentroids as $index => $centroid) {
@@ -278,6 +315,10 @@ class ProsesController extends Controller
             'centroidSum',
             'allIterations',
             'allDistancesPerIteration',
+            'clusterRank',
+            'clusterLabel',
+            'clusterColor',
+
             'allClusterResultsPerIteration',
             'allSSEPerIteration', // Pass allSSEPerIteration to view
             'totalSSE'  // Pass totalSSE to view
