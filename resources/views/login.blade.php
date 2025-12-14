@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Login</title>
+    <title>Sistem E-Wallet | Login</title>
 
     <!-- Custom fonts for this template-->
     <link href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
@@ -19,6 +19,21 @@
 
     <!-- Custom styles for this template-->
     <link href="{{ asset('css/sb-admin-2.min.css') }}" rel="stylesheet">
+    <style>
+        .bg-login-image {
+            background: #fff;
+            /* biar bersih */
+            /* ini yang bikin gak terlalu pojok */
+        }
+
+        .login-illustration {
+            max-width: 60%;
+            max-height: auto;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+    </style>
 
 </head>
 
@@ -35,9 +50,11 @@
                     <div class="card-body p-0">
                         <!-- Nested Row within Card Body -->
                         <div class="row">
-                            <div class="col-lg-6 d-none d-lg-block bg-login-image">
-
+                            <div
+                                class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center bg-login-image">
+                                <img src="{{ asset('img/logo.jpeg') }}" alt="Logo" class="login-illustration">
                             </div>
+
                             <div class="col-lg-6">
                                 <div class="p-5">
                                     <div class="text-center">
