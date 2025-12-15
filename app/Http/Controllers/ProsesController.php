@@ -16,6 +16,11 @@ class ProsesController extends Controller
             'totalDataset' => $totalDataset,
             'allDatasets' => $allDatasets,
             'selectedDatasets' => null,
+            'clusterScatterDatasets' => [],
+            'centroidScatter' => [],
+            'plotX' => null,
+            'plotY' => null,
+
         ]);
     }
     public function show($id)
@@ -286,6 +291,70 @@ class ProsesController extends Controller
         }
 
         $newCentroids = $centroids;
+        // ================== VISUALISASI CLUSTER (SCATTER 2D) ==================
+// Pilih 2 fitur dengan variasi (variance) paling besar agar plot lebih "kebaca"
+        $n = count($X);
+        $featureVariance = [];
+
+        foreach ($features as $f) {
+            $vals = [];
+            foreach ($X as $pid => $vec) {
+                $vals[] = (float) ($vec[$f] ?? 0);
+            }
+            $mean = array_sum($vals) / max(count($vals), 1);
+            $var = 0.0;
+            foreach ($vals as $v) {
+                $var += ($v - $mean) * ($v - $mean);
+            }
+            $featureVariance[$f] = $var / max(count($vals), 1);
+        }
+
+        arsort($featureVariance);
+        $top = array_keys($featureVariance);
+
+        // fallback aman kalau data aneh
+        $plotX = $top[0] ?? $features[0];
+        $plotY = $top[1] ?? ($features[1] ?? $features[0]);
+
+        // Susun dataset per cluster untuk Chart.js
+        $clusterScatterDatasets = [];
+        $clusterColors = [
+            0 => 'rgba(13,110,253,0.65)',  // bootstrap primary
+            1 => 'rgba(255,193,7,0.65)',   // warning
+            2 => 'rgba(25,135,84,0.65)',   // success
+            3 => 'rgba(220,53,69,0.65)',   // danger
+            4 => 'rgba(13,202,240,0.65)',  // info
+        ];
+
+        foreach ($clustersIds as $idx => $members) {
+            $pts = [];
+            foreach ($members as $pid) {
+                $pts[] = [
+                    'x' => (float) ($X[$pid][$plotX] ?? 0),
+                    'y' => (float) ($X[$pid][$plotY] ?? 0),
+                    'name' => $names[$pid] ?? ('ID ' . $pid),
+                    'id' => $pid,
+                ];
+            }
+
+            $clusterScatterDatasets[] = [
+                'label' => 'C' . ($idx + 1),
+                'data' => $pts,
+                'backgroundColor' => $clusterColors[$idx] ?? 'rgba(108,117,125,0.65)',
+                'pointRadius' => 4,
+            ];
+        }
+
+        // Titik centroid (dibikin dataset sendiri biar beda marker)
+        $centroidScatter = [];
+        foreach ($newCentroids as $idx => $c) {
+            $centroidScatter[] = [
+                'x' => (float) ($c[$plotX] ?? 0),
+                'y' => (float) ($c[$plotY] ?? 0),
+                'cluster' => 'C' . ($idx + 1),
+            ];
+        }
+        // ======================================================================
 
         // --- Hitung jumlah total dataset ---
         $totalDataset = Dataset::count();
@@ -318,6 +387,10 @@ class ProsesController extends Controller
             'clusterRank',
             'clusterLabel',
             'clusterColor',
+            'plotX',
+            'plotY',
+            'clusterScatterDatasets',
+            'centroidScatter',
 
             'allClusterResultsPerIteration',
             'allSSEPerIteration', // Pass allSSEPerIteration to view

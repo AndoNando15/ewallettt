@@ -503,6 +503,34 @@
                                     @endforeach
                                 </div> {{-- /.row --}}
                             @endif
+                            {{-- ================= VISUALISASI HASIL CLUSTERING AKHIR ================= --}}
+                            @if (!empty($clusterScatterDatasets) && !empty($centroidScatter))
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="card shadow-sm">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">
+                                                    Visualisasi Clustering Akhir (Scatter)
+                                                    <small class="text-muted">({{ $plotX }} vs
+                                                        {{ $plotY }})</small>
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <canvas id="clusterScatterChart" height="120"></canvas>
+                                                </div>
+                                                <small class="text-muted d-block mt-2">
+                                                    Titik berwarna = data (e-wallet), titik hitam = centroid.
+                                                    Kedekatan titik menunjukkan kemiripan, jarak centroid menunjukkan
+                                                    separasi antar cluster.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            {{-- ===================================================================== --}}
+
                         </div>
                     </div>
                 @endif
@@ -892,7 +920,75 @@
     </div>
 @endsection
 
-@push('script')
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            const el = document.getElementById('clusterScatterChart');
+            if (!el) return;
+
+            const datasets = @json($clusterScatterDatasets ?? []);
+            const centroids = @json($centroidScatter ?? []);
+
+            // dataset centroid (marker beda)
+            datasets.push({
+                label: 'Centroid',
+                data: centroids.map(c => ({
+                    x: c.x,
+                    y: c.y,
+                    cluster: c.cluster
+                })),
+                backgroundColor: 'rgba(0,0,0,0.75)',
+                pointRadius: 7,
+                pointStyle: 'rectRot',
+            });
+
+            new Chart(el.getContext('2d'), {
+                type: 'scatter',
+                data: {
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const p = ctx.raw || {};
+                                    // centroid
+                                    if (p.cluster) {
+                                        return `Centroid ${p.cluster}: (${Number(p.x).toFixed(2)}, ${Number(p.y).toFixed(2)})`;
+                                    }
+                                    // point
+                                    const name = p.name || 'Data';
+                                    return `${name} [ID ${p.id}] → (${Number(p.x).toFixed(2)}, ${Number(p.y).toFixed(2)})`;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: @json($plotX)
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: @json($plotY)
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+
     <script>
         (function() {
             const clusterSelect = document.getElementById('cluster');
