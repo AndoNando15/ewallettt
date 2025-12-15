@@ -511,8 +511,8 @@
                                             <div class="card-header">
                                                 <h5 class="mb-0">
                                                     Visualisasi Clustering Akhir (Scatter)
-                                                    <small class="text-muted">({{ $plotX }} vs
-                                                        {{ $plotY }})</small>
+                                                    {{-- <small class="text-muted">({{ $plotX }} vs
+                                                        {{ $plotY }})</small> --}}
                                                 </h5>
                                             </div>
                                             <div class="card-body">
