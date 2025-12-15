@@ -919,7 +919,13 @@
         </div>
     </div>
 @endsection
-
+<style>
+    #clusterScatterChart {
+        width: 100%;
+        height: 400px;
+        /* Atur sesuai ukuran yang diinginkan */
+    }
+</style>
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -962,7 +968,7 @@
                                     }
                                     // point
                                     const name = p.name || 'Data';
-                                    return `${name} [ID ${p.id}] → (${Number(p.x).toFixed(2)}, ${Number(p.y).toFixed(2)})`;
+                                    return `${name} [ID ${p.id}] → (${Number(p.x).toFixed(2)}`;
                                 }
                             }
                         },
